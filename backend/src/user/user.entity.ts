@@ -1,6 +1,10 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
 
-export type UserRole = 'admin' | 'agent' | 'client';
+export enum UserRole {
+  ADMIN = 'admin',
+  AGENT = 'agent',
+  CLIENT = 'client',
+}
 
 @Entity()
 export class User {
@@ -19,11 +23,10 @@ export class User {
   @Column()
   password: string;
 
-  @Column({
-    type: 'enum',
-    enum: ['admin', 'agent', 'client'],
-    default: 'client',
-  })
+   @Column({  
+              type: 'enum', 
+              enum: UserRole, 
+              default: UserRole.CLIENT })
   role: UserRole;
 
   @CreateDateColumn()
