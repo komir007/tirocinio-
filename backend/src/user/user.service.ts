@@ -41,6 +41,10 @@ export class UserService {
     return user;
   }
 
+   async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { email } });
+    }
+
   // ✅ UPDATE (ricripta password se aggiornata)
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     if (updateUserDto.password) {
