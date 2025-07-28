@@ -2,10 +2,16 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserModule } from './user/user.module';
+import { UsersModule } from './user/user.module';
+import { AuthModule } from './auth/auth.module';
+import { ConfigModule } from '@nestjs/config';
+import { JwtStrategy } from './auth/jwt.strategy';
+import { APP_GUARD } from '@nestjs/core';
+
 
 @Module({
   imports: [
+      ConfigModule.forRoot({ isGlobal: true }),
       TypeOrmModule.forRoot({
       type: 'mysql',
       host: 'localhost',
@@ -16,9 +22,13 @@ import { UserModule } from './user/user.module';
       autoLoadEntities: true,
       synchronize: true, // ❗ solo in sviluppo
     }),
-      UserModule,
+      UsersModule,
+      AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,
+  
+    JwtStrategy,
+  ],
 })
 export class AppModule {}

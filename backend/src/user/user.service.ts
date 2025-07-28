@@ -1,9 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+/*import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserDto , UpdateUserDto } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -41,7 +40,7 @@ export class UserService {
     return user;
   }
 
-   async findByEmail(email: string): Promise<User | null> {
+   async findOneByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { email } });
     }
 
@@ -58,5 +57,55 @@ export class UserService {
   // ✅ DELETE
   async remove(id: string): Promise<void> {
     await this.userRepository.delete(id);
+  }
+}
+*/
+// src/users/users.service.ts
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from './user.entity';
+import { CreateUserDto , UpdateUserDto } from './dto/user.dto';
+import * as bcrypt from 'bcrypt';
+
+@Injectable()
+export class UsersService {
+  constructor(
+    @InjectRepository(User) // Inietta il repository di TypeORM per l'entità User
+    private usersRepository: Repository<User>,
+  ) {}
+
+  // Trova un utente per ID
+  async findOne(id: number): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { id } });
+  }
+
+  // Trova un utente per email (usato spesso per l'autenticazione)
+  async findOneByEmail(email: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { email } });
+  }
+
+  // Crea un nuovo utente
+  // userData ora può includere name, surname, email, password, role
+  async create(userData: Partial<User>): Promise<User> {
+    const newUser = this.usersRepository.create(userData);
+    return this.usersRepository.save(newUser);
+  }
+
+  // Aggiorna un utente
+  // userData ora può includere name, surname, email, password, role
+  async update(id: number, userData: Partial<User>): Promise<User | null> {
+    await this.usersRepository.update(id, userData);
+    return this.findOne(id);
+  }
+
+  // Elimina un utente
+  async remove(id: number): Promise<void> {
+    await this.usersRepository.delete(id);
+  }
+
+  // Trova tutti gli utenti
+  async findAll(): Promise<User[]> {
+    return this.usersRepository.find();
   }
 }

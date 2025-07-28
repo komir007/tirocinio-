@@ -1,22 +1,29 @@
+// src/auth/auth.module.ts
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { UserModule } from '../user/user.module';
+import { UsersModule } from '../user/user.module';
+import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    UserModule,
+    UsersModule,
     PassportModule,
-    JwtModule.register({
-      secret: 'superSecretKey', // ✅ Sostituiscila con una ENV in produzione
-      signOptions: { expiresIn: '1h' }, // Token valido per 1 ora
+    ConfigModule, // Importa ConfigModule per usare ConfigService
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '60m' }, // Scadenza del token
+      }),
+      inject: [ConfigService],
     }),
   ],
-  controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
-  exports: [AuthService],
+  controllers: [AuthController],
+  exports: [AuthService], // Esporta AuthService se necessario in altri moduli
 })
 export class AuthModule {}
