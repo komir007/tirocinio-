@@ -84,6 +84,8 @@ export class UsersService {
   async findOneByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({ where: { email } });
   }
+  
+
 
   // Crea un nuovo utente
   // userData ora può includere name, surname, email, password, role

@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { AppProps } from 'next/app'; // Importa AppProps da next/app
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { AuthProvider } from './components/Authcontext';
-import { theme } from '../../theme/muiTheme';
-import Navbar from './components/Navbar'; // Importa la Navbar
+import { AuthProvider } from '../components/AuthContext';
+import { theme } from '../theme/muiTheme';
+import Navbar from '../components/Navbar'; // Importa la Navbar
 
 // Importa le pagine che useremo per la navigazione interna, dato che non usiamo next/router
 // Assicurati che questi import si riferiscano ai nuovi file .tsx

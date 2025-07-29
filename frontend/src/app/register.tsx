@@ -1,0 +1,168 @@
+import React, { useContext, useState, useEffect } from 'react';
+import {
+  Container, Box, Typography, TextField, Button, CircularProgress,
+  Select, MenuItem, FormControl, InputLabel, Paper, Dialog, DialogTitle, DialogContent, DialogActions
+} from '@mui/material';
+import { AuthContext, User, Role } from './components/Authcontext'; // Importa AuthContext e tipi
+
+// Definisci un tipo per le props della pagina di registrazione
+interface RegisterPageProps {
+  setCurrentPage: (page: string) => void;
+}
+
+const RegisterPage: React.FC<RegisterPageProps> = ({ setCurrentPage }) => {
+  const { user, role } = useContext(AuthContext);
+  const [name, setName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [selectedRole, setSelectedRole] = useState<Role>('client'); // Default for agents
+  const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [showDialog, setShowDialog] = useState<boolean>(false);
+  const [dialogMessage, setDialogMessage] = useState<string>('');
+
+  // Redirect if not admin or agent
+  useEffect(() => {
+    if (!user || (role !== 'admin' && role !== 'agent')) {
+      setDialogMessage('Non hai i permessi per accedere a questa pagina.');
+      setShowDialog(true);
+      setTimeout(() => {
+        setShowDialog(false);
+        setCurrentPage('home');
+      }, 2000);
+    }
+  }, [user, role, setCurrentPage]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    // Simulate user creation API call
+    return new Promise<boolean>((resolve) => { // Specifica il tipo di risoluzione della Promise
+      setTimeout(() => {
+        const newUser = {
+          id: `new-user-${Date.now()}`,
+          name,
+          email,
+          password, // In a real app, this would be hashed
+          role: role === 'admin' ? selectedRole : 'client', // Admin chooses, Agent defaults to client
+          createdBy: user ? user.id : null, // Track who created the user
+        };
+
+        // For demo purposes, we'll just log it and show a success message
+        console.log('Nuovo utente creato (simulato):', newUser);
+        setDialogMessage(`Utente '${name}' creato con successo come ${newUser.role}!`);
+        setShowDialog(true);
+        setLoading(false);
+        resolve(true); // Indicate success
+      }, 1000);
+    });
+  };
+
+  const handleCloseDialog = () => {
+    setShowDialog(false);
+    if (!error) { // Only navigate if there was no error
+      setCurrentPage('users'); // Go back to user list after successful registration
+    }
+  };
+
+  if (!user || (role !== 'admin' && role !== 'agent')) {
+    return (
+      <Container className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8">
+        <Paper className="p-8 rounded-lg shadow-lg bg-white text-center w-full max-w-md">
+          <Typography variant="h6" color="error" gutterBottom>
+            Accesso negato!
+          </Typography>
+          <Typography variant="body1">
+            Solo amministratori e agenti possono registrare nuovi utenti.
+          </Typography>
+          <Button variant="contained" color="primary" className="mt-4" onClick={() => setCurrentPage('login')}>
+            Vai al Login
+          </Button>
+        </Paper>
+      </Container>
+    );
+  }
+
+  return (
+    <Container className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8">
+      <Paper className="p-8 rounded-lg shadow-lg bg-white w-full max-w-md">
+        <Typography variant="h5" component="h2" gutterBottom className="text-center text-gray-800 font-bold">
+          Registra Nuovo Utente
+        </Typography>
+        <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
+          <TextField
+            label="Nome"
+            variant="outlined"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            fullWidth
+          />
+          <TextField
+            label="Email"
+            variant="outlined"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            fullWidth
+          />
+          <TextField
+            label="Password"
+            variant="outlined"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            fullWidth
+          />
+
+          {role === 'admin' && ( // Only show role selection for admins
+            <FormControl variant="outlined" fullWidth>
+              <InputLabel>Ruolo</InputLabel>
+              <Select
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value as Role)} // Cast to Role type
+                label="Ruolo"
+              >
+                <MenuItem value="client">Cliente</MenuItem>
+                <MenuItem value="agent">Agente</MenuItem>
+                <MenuItem value="admin">Amministratore</MenuItem>
+              </Select>
+            </FormControl>
+          )}
+
+          <Box className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mt-4">
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth
+              disabled={loading}
+              className="py-3 text-lg font-semibold rounded-lg shadow-md hover:shadow-lg transition duration-300"
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Registra Utente'}
+            </Button>
+          </Box>
+        </form>
+        {error && <Typography color="error" className="mt-4 text-center">{error}</Typography>}
+      </Paper>
+
+      <Dialog open={showDialog} onClose={handleCloseDialog}>
+        <DialogTitle>Notifica</DialogTitle>
+        <DialogContent>
+          <Typography>{dialogMessage}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Chiudi
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Container>
+  );
+};
+
+export default RegisterPage;

@@ -7,7 +7,7 @@ export enum UserRole {
   CLIENT = 'client',
 }
 
-@Entity('users') // Specifica il nome della tabella nel database
+@Entity('user') // Specifica il nome della tabella nel database
 export class User {
   @PrimaryGeneratedColumn() // Colonna chiave primaria auto-incrementante
   id: number;
