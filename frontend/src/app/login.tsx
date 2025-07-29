@@ -1,4 +1,4 @@
-
+'use client'
 import React, { useContext, useState } from 'react';
 import {
   Container, Paper, Typography, TextField, Button, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions

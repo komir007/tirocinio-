@@ -1,3 +1,4 @@
+'use client'
 import React, { useState } from 'react';
 import { AppProps } from 'next/app'; // Importa AppProps da next/app
 import { ThemeProvider } from '@mui/material/styles';
@@ -14,7 +15,7 @@ import UsersPage from './users';
 import RegisterPage from './register';
 
 // Importa i CSS globali (per il body)
-import '../styles/globals.css';
+import './globals.css';
 
 // Definisci un tipo per setCurrentPage per passarlo alle pagine
 type SetCurrentPage = (page: string) => void;

@@ -1,15 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { CircularProgress, Typography } from '@mui/material';
-
-// Definisci i tipi per utente e ruolo
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: Role; // Aggiungi il ruolo qui per coerenza
-}
-
-export type Role = 'admin' | 'agent' | 'client' | null;
+import { User, Role } from '../types/auth'; // Importa User e Role dal nuovo file
 
 // Definisci l'interfaccia per il valore del contesto di autenticazione
 export interface AuthContextType {
@@ -20,71 +11,89 @@ export interface AuthContextType {
   loading: boolean;
 }
 
-// Crea il contesto con un valore iniziale che corrisponde all'interfaccia
-// Il valore iniziale può essere null, ma poi lo castiamo per TypeScript
 export const AuthContext = createContext<AuthContextType | null>(null);
+
+// Ottieni l'URL base dell'API dalle variabili d'ambiente
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [role, setRole] = useState<Role>(null); // 'admin', 'agent', 'client'
+  const [role, setRole] = useState<Role>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Simulate checking for a stored token/session on mount
-    const storedUser = localStorage.getItem('currentUser');
-    const storedRole = localStorage.getItem('currentRole');
-    if (storedUser && storedRole) {
+    const storedToken = localStorage.getItem('accessToken');
+    if (storedToken) {
+      // In un'app reale, qui faresti una chiamata API per validare il token
+      // e recuperare i dettagli dell'utente, per evitare token scaduti o invalidi.
+      // Per questa demo, simuleremo il recupero dei dettagli utente dal token.
       try {
-        setUser(JSON.parse(storedUser));
-        setRole(storedRole as Role); // Cast a Role
+        const payloadBase64 = storedToken.split('.')[1];
+        const decodedPayload = JSON.parse(atob(payloadBase64)); // Decodifica il payload del JWT
+        
+        const currentUser: User = {
+          id: decodedPayload.sub, // 'sub' è spesso l'ID utente nel JWT
+          name: decodedPayload.name || 'Utente', // 'name' potrebbe essere nel payload
+          email: decodedPayload.email || 'email@example.com', // 'email' potrebbe essere nel payload
+          role: decodedPayload.role as Role, // 'role' dovrebbe essere nel payload
+        };
+        setUser(currentUser);
+        setRole(currentUser.role);
       } catch (e) {
-        console.error("Failed to parse stored user or role:", e);
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('currentRole');
+        console.error("Errore nel decodificare il token o nel recuperare l'utente:", e);
+        localStorage.removeItem('accessToken');
       }
     }
     setLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
-    // Simulate API call to NestJS for login
     setLoading(true);
-    return new Promise<{ success: boolean; user?: User; role?: Role; message?: string }>((resolve, reject) => {
-      setTimeout(() => { // Simulate network delay
-        let loggedInUser: User | null = null;
-        let loggedInRole: Role = null;
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, { // Endpoint di login NestJS
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-        if (email === 'admin@example.com' && password === 'admin123') {
-          loggedInUser = { id: 'admin-1', name: 'Amministratore', email: 'admin@example.com', role: 'admin' };
-          loggedInRole = 'admin';
-        } else if (email === 'agent@example.com' && password === 'agent123') {
-          loggedInUser = { id: 'agent-1', name: 'Agente Mario', email: 'agent@example.com', role: 'agent' };
-          loggedInRole = 'agent';
-        } else if (email === 'client@example.com' && password === 'client123') {
-          loggedInUser = { id: 'client-1', name: 'Cliente Paolo', email: 'client@example.com', role: 'client' };
-          loggedInRole = 'client';
-        } else {
-          setLoading(false);
-          reject({ success: false, message: 'Credenziali non valide.' });
-          return;
-        }
+      const data = await response.json();
+
+      if (response.ok) {
+        // Se il login ha successo, salva il token e i dati utente
+        localStorage.setItem('accessToken', data.access_token);
+        // Decodifica il token per ottenere i dettagli dell'utente e il ruolo
+        const payloadBase64 = data.access_token.split('.')[1];
+        const decodedPayload = JSON.parse(atob(payloadBase64));
+        
+        const loggedInUser: User = {
+          id: decodedPayload.sub,
+          name: decodedPayload.name || 'Utente',
+          email: decodedPayload.email || 'email@example.com',
+          role: decodedPayload.role as Role,
+        };
 
         setUser(loggedInUser);
-        setRole(loggedInRole);
-        localStorage.setItem('currentUser', JSON.stringify(loggedInUser));
-        localStorage.setItem('currentRole', loggedInRole);
-        setLoading(false);
-        resolve({ success: true, user: loggedInUser, role: loggedInRole });
-      }, 1000);
-    });
+        setRole(loggedInUser.role);
+        return { success: true, user: loggedInUser, role: loggedInUser.role };
+      } else {
+        // Gestisci errori di login dal backend
+        throw new Error(data.message || 'Credenziali non valide.');
+      }
+    } catch (err: any) {
+      console.error("Errore durante il login:", err);
+      return { success: false, message: err.message || 'Errore di rete o del server.' };
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = () => {
     setUser(null);
     setRole(null);
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('currentRole');
-    // In a real app, you'd also invalidate the token on the backend
+    localStorage.removeItem('accessToken'); // Rimuovi il token
+    // In un'app reale, potresti anche voler invalidare il token sul backend
   };
 
   if (loading) {
@@ -96,7 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }
 
-  // Il valore del contesto deve corrispondere all'interfaccia AuthContextType
   const contextValue: AuthContextType = {
     user,
     role,
@@ -111,3 +119,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
+

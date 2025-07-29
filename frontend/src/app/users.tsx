@@ -1,49 +1,97 @@
 import React, { useContext, useState, useEffect } from 'react';
 import {
   Container, Box, Typography, Button,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
+  CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
-import { AuthContext, User, Role } from '../components/AuthContext'; // Importa AuthContext e tipi
+import { AuthContext, User, Role } from './components/Authcontext'; // Importa AuthContext e tipi
+import { DisplayUser } from './types/auth'; // Importa DisplayUser
 
 // Definisci un tipo per le props della pagina utenti
 interface UsersPageProps {
   setCurrentPage: (page: string) => void;
 }
 
-// --- Simulated User Data (for demonstration) ---
-// Estendi l'interfaccia User per includere 'createdBy'
-interface DisplayUser extends User {
-  createdBy: string | null;
-}
-
-const initialUsers: DisplayUser[] = [
-  { id: 'admin-1', name: 'Amministratore', email: 'admin@example.com', role: 'admin', createdBy: null },
-  { id: 'agent-1', name: 'Agente Mario', email: 'agent@example.com', role: 'agent', createdBy: null },
-  { id: 'client-1', name: 'Cliente Paolo', email: 'client@example.com', role: 'client', createdBy: 'agent-1' },
-  { id: 'client-2', name: 'Cliente Giulia', email: 'giulia@example.com', role: 'client', createdBy: 'agent-1' },
-  { id: 'client-3', name: 'Cliente Marco', email: 'marco@example.com', role: 'client', createdBy: 'admin-1' },
-  { id: 'client-4', name: 'Cliente Sara', email: 'sara@example.com', role: 'client', createdBy: 'agent-2' }, // Assume agent-2 exists
-];
+// Ottieni l'URL base dell'API dalle variabili d'ambiente
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
 const UsersPage: React.FC<UsersPageProps> = ({ setCurrentPage }) => {
   const { user, role } = useContext(AuthContext);
   const [users, setUsers] = useState<DisplayUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showDialog, setShowDialog] = useState<boolean>(false);
+  const [dialogMessage, setDialogMessage] = useState<string>('');
 
   useEffect(() => {
-    // Simulate fetching users based on role
-    if (role === 'admin') {
-      setUsers(initialUsers); // Admin sees all
-    } else if (role === 'agent' && user) {
-      // Agent sees only clients created by them
-      const filteredUsers = initialUsers.filter(u => u.role === 'client' && u.createdBy === user.id);
-      setUsers(filteredUsers);
-    } else {
-      setUsers([]); // Clients or unauthenticated users see nothing
+    const fetchUsers = async () => {
+      if (!user || (role !== 'admin' && role !== 'agent')) {
+        setUsers([]);
+        setLoadingUsers(false);
+        return; // Non tentare di recuperare gli utenti se non autorizzato
+      }
+
+      setLoadingUsers(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+          throw new Error('Token di autenticazione non trovato.');
+        }
+
+        const response = await fetch(`${API_BASE_URL}/users`, { // Endpoint per la lista utenti NestJS
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`, // Invia il token nell'header Authorization
+          },
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setUsers(data);
+        } else {
+          // Gestisci errori specifici dal backend (es. 401, 403)
+          if (response.status === 401 || response.status === 403) {
+            setError('Non autorizzato ad accedere a queste risorse. Potrebbe essere necessario effettuare nuovamente il login.');
+            setDialogMessage('Non autorizzato ad accedere a queste risorse. Effettua nuovamente il login.');
+            setShowDialog(true);
+            // Opzionale: pulisci il token e reindirizza al login
+            // localStorage.removeItem('accessToken');
+            // setCurrentPage('login');
+          } else {
+            setError(data.message || 'Errore durante il recupero degli utenti.');
+            setDialogMessage(data.message || 'Errore durante il recupero degli utenti.');
+            setShowDialog(true);
+          }
+        }
+      } catch (err: any) {
+        console.error('Errore di rete o del server:', err);
+        setError(err.message || 'Si è verificato un errore di connessione. Riprova più tardi.');
+        setDialogMessage(err.message || 'Si è verificato un errore di connessione. Riprova più tardi.');
+        setShowDialog(true);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    fetchUsers();
+  }, [user, role, setCurrentPage]); // Dipendenze: user e role
+
+  const handleCreateUserClick = () => {
+    setCurrentPage('register');
+  };
+
+  const handleCloseDialog = () => {
+    setShowDialog(false);
+    // Se l'errore era un 401/403, reindirizza al login dopo aver chiuso il dialog
+    if (error && (error.includes('Non autorizzato') || error.includes('Effettua nuovamente il login'))) {
+      setCurrentPage('login');
     }
-  }, [role, user]);
+  };
 
   if (!user || (role !== 'admin' && role !== 'agent')) {
-    // Show message box instead of alert
     return (
       <Container className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8">
         <Paper className="p-8 rounded-lg shadow-lg bg-white text-center w-full max-w-md">
@@ -61,9 +109,14 @@ const UsersPage: React.FC<UsersPageProps> = ({ setCurrentPage }) => {
     );
   }
 
-  const handleCreateUserClick = () => {
-    setCurrentPage('register');
-  };
+  if (loadingUsers) {
+    return (
+      <Container className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8">
+        <CircularProgress />
+        <Typography variant="h6" className="ml-4">Caricamento utenti...</Typography>
+      </Container>
+    );
+  }
 
   return (
     <Container className="p-8">
@@ -81,6 +134,8 @@ const UsersPage: React.FC<UsersPageProps> = ({ setCurrentPage }) => {
             Crea Nuovo Utente
           </Button>
         </Box>
+
+        {error && <Typography color="error" className="mb-4">{error}</Typography>}
 
         <TableContainer component={Paper} className="rounded-lg shadow-md">
           <Table aria-label="user table">
@@ -113,6 +168,18 @@ const UsersPage: React.FC<UsersPageProps> = ({ setCurrentPage }) => {
           </Table>
         </TableContainer>
       </Paper>
+
+      <Dialog open={showDialog} onClose={handleCloseDialog}>
+        <DialogTitle>Notifica</DialogTitle>
+        <DialogContent>
+          <Typography>{dialogMessage}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Chiudi
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

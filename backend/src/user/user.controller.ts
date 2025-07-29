@@ -12,8 +12,8 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   // Ottenere tutti gli utenti (solo per admin)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN)
+  //@UseGuards(AuthGuard('jwt'), RolesGuard)
+  //@Roles(UserRole.ADMIN)
   @Get()
   async findAll(): Promise<User[]> {
     return this.usersService.findAll();

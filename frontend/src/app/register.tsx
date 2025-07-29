@@ -1,3 +1,4 @@
+"use client"
 import React, { useContext, useState, useEffect } from 'react';
 import {
   Container, Box, Typography, TextField, Button, CircularProgress,
@@ -9,6 +10,9 @@ import { AuthContext, User, Role } from './components/Authcontext'; // Importa A
 interface RegisterPageProps {
   setCurrentPage: (page: string) => void;
 }
+
+// Ottieni l'URL base dell'API dalle variabili d'ambiente
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
 const RegisterPage: React.FC<RegisterPageProps> = ({ setCurrentPage }) => {
   const { user, role } = useContext(AuthContext);
@@ -38,32 +42,62 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ setCurrentPage }) => {
     setError('');
     setLoading(true);
 
-    // Simulate user creation API call
-    return new Promise<boolean>((resolve) => { // Specifica il tipo di risoluzione della Promise
-      setTimeout(() => {
-        const newUser = {
-          id: `new-user-${Date.now()}`,
-          name,
-          email,
-          password, // In a real app, this would be hashed
-          role: role === 'admin' ? selectedRole : 'client', // Admin chooses, Agent defaults to client
-          createdBy: user ? user.id : null, // Track who created the user
-        };
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Token di autenticazione non trovato. Effettua il login.');
+      }
 
-        // For demo purposes, we'll just log it and show a success message
-        console.log('Nuovo utente creato (simulato):', newUser);
-        setDialogMessage(`Utente '${name}' creato con successo come ${newUser.role}!`);
+      const newUserRole = role === 'admin' ? selectedRole : 'client'; // L'admin sceglie, l'agente crea solo client
+
+      const response = await fetch(`${API_BASE_URL}/users`, { // Endpoint di creazione utente NestJS
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // Invia il token
+        },
+        body: JSON.stringify({ name, email, password, role: newUserRole }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setDialogMessage(`Utente '${name}' creato con successo come ${newUserRole}!`);
         setShowDialog(true);
-        setLoading(false);
-        resolve(true); // Indicate success
-      }, 1000);
-    });
+        // Dopo il successo, reindirizza alla lista utenti
+        setTimeout(() => {
+          setShowDialog(false);
+          setCurrentPage('users');
+        }, 1500);
+      } else {
+        // Gestisci errori specifici dal backend (es. email già esistente)
+        if (response.status === 401 || response.status === 403) {
+          setError('Non autorizzato a creare utenti. Potrebbe essere necessario effettuare nuovamente il login.');
+          setDialogMessage('Non autorizzato a creare utenti. Effettua nuovamente il login.');
+          setShowDialog(true);
+        } else {
+          setError(data.message || 'Errore durante la creazione dell\'utente.');
+          setDialogMessage(data.message || 'Errore durante la creazione dell\'utente.');
+          setShowDialog(true);
+        }
+      }
+    } catch (err: any) {
+      console.error('Errore durante la creazione utente:', err);
+      setError(err.message || 'Si è verificato un errore di connessione. Riprova più tardi.');
+      setDialogMessage(err.message || 'Si è verificato un errore di connessione. Riprova più tardi.');
+      setShowDialog(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCloseDialog = () => {
     setShowDialog(false);
-    if (!error) { // Only navigate if there was no error
-      setCurrentPage('users'); // Go back to user list after successful registration
+    // Se l'errore era un 401/403, reindirizza al login dopo aver chiuso il dialog
+    if (error && (error.includes('Non autorizzato') || error.includes('Effettua nuovamente il login'))) {
+      setCurrentPage('login');
+    } else if (!error) { // Solo se non c'è stato un errore, naviga
+      setCurrentPage('users');
     }
   };
 
