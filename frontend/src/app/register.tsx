@@ -50,7 +50,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ setCurrentPage }) => {
 
       const newUserRole = role === 'admin' ? selectedRole : 'client'; // L'admin sceglie, l'agente crea solo client
 
-      const response = await fetch(`${API_BASE_URL}/users`, { // Endpoint di creazione utente NestJS
+      const response = await fetch(`${API_BASE_URL}/auth/register`, { // Endpoint di creazione utente NestJS
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
