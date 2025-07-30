@@ -13,7 +13,7 @@ export class UsersController {
 
   // Ottenere tutti gli utenti (solo per admin)
   //@UseGuards(AuthGuard('jwt'), RolesGuard)
-  //@Roles(UserRole.ADMIN)
+  //@Roles(UserRole.ADMIN, UserRole.AGENT) // Permetti sia ad admin che agent di accedere
   @Get()
   async findAll(): Promise<User[]> {
     return this.usersService.findAll();
@@ -21,7 +21,7 @@ export class UsersController {
 
   // Ottenere un utente per ID (solo per admin o l'utente stesso)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN) // Permetti agli admin e all'utente stesso di accedere
   @Get(':id')
   async findOne(@Param('id') id: number): Promise<User | null> {
     return this.usersService.findOne(id); // Converti stringa a numero
@@ -30,24 +30,24 @@ export class UsersController {
   // Creare un nuovo utente (può essere pubblico o protetto, es. solo admin crea utenti)
   // Se la registrazione è gestita da AuthModule, questa rotta potrebbe essere solo per admin
   @UseGuards(AuthGuard('jwt'), RolesGuard) // Esempio: solo gli admin possono creare utenti
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN , UserRole.AGENT) // Permetti sia ad admin che agent di creare utenti
   @Post()
   async create(@Body() createUserDto: CreateUserDto): Promise<User> {
     // La password verrà hashata nel servizio di autenticazione o qui prima di salvare
-    return this.usersService.create(createUserDto);
+    return this.usersService.create(createUserDto); // o req.user.id per chi ha creato l'utente
   }
 
   // Aggiornare un utente (solo per admin o l'utente stesso)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN) // Per semplicità, solo admin possono aggiornare altri utenti
+  @Roles(UserRole.ADMIN, UserRole.AGENT) // Per semplicità, solo admin possono aggiornare altri utenti
   @Put(':id')
   async update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto): Promise<User | null> {
     return this.usersService.update(id, updateUserDto);
   }
 
   // Eliminare un utente (solo per admin)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN)
+  //@UseGuards(AuthGuard('jwt'), RolesGuard)
+  //@Roles(UserRole.ADMIN, UserRole.AGENT) // Permetti sia ad admin che agent di eliminare utenti
   @Delete(':id')
   async remove(@Param('id') id: number): Promise<void> {
     return this.usersService.remove(id);

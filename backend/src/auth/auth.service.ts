@@ -39,6 +39,7 @@ export class AuthService {
       name: createUserDto.name, // Includi name
       surname: createUserDto.surname, // Includi surname
       role: userRole,
+      createdBy: createUserDto.createdBy, // Includi createdBy
     });
     // Non restituire la password hashata
     const { password, ...result } = user;

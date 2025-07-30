@@ -4,8 +4,8 @@ import {
   Container, Box, Typography, TextField, Button, CircularProgress,
   Select, MenuItem, FormControl, InputLabel, Paper, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
-import { AuthContext, User, Role } from './components/Authcontext'; // Importa AuthContext e tipi
-
+import { AuthContext} from './components/Authcontext'; // Importa AuthContext e tipi
+import { Role } from './types/auth'; // Importa il tipo Role
 // Definisci un tipo per le props della pagina di registrazione
 interface RegisterPageProps {
   setCurrentPage: (page: string) => void;
@@ -15,7 +15,9 @@ interface RegisterPageProps {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
 const RegisterPage: React.FC<RegisterPageProps> = ({ setCurrentPage }) => {
-  const { user, role } = useContext(AuthContext);
+  const authContext = useContext(AuthContext);
+  const user = authContext?.user;
+  const role = authContext?.role;
   const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -36,6 +38,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ setCurrentPage }) => {
       }, 2000);
     }
   }, [user, role, setCurrentPage]);
+  //console.log('user:', user, 'role:', role);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +59,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ setCurrentPage }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`, // Invia il token
         },
-        body: JSON.stringify({ name, email, password, role: newUserRole }),
+        body: JSON.stringify({ name, email, password, role: newUserRole, createdBy: user?.email }), // Includi chi ha creato l'utente
       });
 
       const data = await response.json();
@@ -100,6 +103,18 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ setCurrentPage }) => {
       setCurrentPage('users');
     }
   };
+
+  useEffect(() => {
+  const editUser = localStorage.getItem('editUser');
+  if (editUser) {
+    const userData = JSON.parse(editUser);
+    setName(userData.name || '');
+    setEmail(userData.email || '');
+    setSelectedRole(userData.role || 'client');
+    // ...altri campi se servono
+    localStorage.removeItem('editUser');
+  }
+  }, []);
 
   if (!user || (role !== 'admin' && role !== 'agent')) {
     return (
@@ -163,7 +178,6 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ setCurrentPage }) => {
               >
                 <MenuItem value="client">Cliente</MenuItem>
                 <MenuItem value="agent">Agente</MenuItem>
-                <MenuItem value="admin">Amministratore</MenuItem>
               </Select>
             </FormControl>
           )}

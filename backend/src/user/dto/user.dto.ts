@@ -23,6 +23,12 @@ export class CreateUserDto {
   @IsOptional() // Il ruolo può essere omesso nella creazione, userà il default
   @IsEnum(UserRole)
   role?: UserRole;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  createdBy?: string; // Reso opzionale
+
 }
 
 export class UpdateUserDto {

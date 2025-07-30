@@ -4,8 +4,13 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
   CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
-import { AuthContext, User, Role } from './components/Authcontext'; // Importa AuthContext e tipi
+import { AuthContext} from './components/Authcontext'; // Importa AuthContext e tipi
 import { DisplayUser } from './types/auth'; // Importa DisplayUser
+
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 
 // Definisci un tipo per le props della pagina utenti
 interface UsersPageProps {
@@ -16,7 +21,9 @@ interface UsersPageProps {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
 const UsersPage: React.FC<UsersPageProps> = ({ setCurrentPage }) => {
-  const { user, role } = useContext(AuthContext);
+  const authContext = useContext(AuthContext);
+  const user = authContext?.user;
+  const role = authContext?.role; 
   const [users, setUsers] = useState<DisplayUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +83,8 @@ const UsersPage: React.FC<UsersPageProps> = ({ setCurrentPage }) => {
       }
     };
 
+
+
     fetchUsers();
   }, [user, role, setCurrentPage]); // Dipendenze: user e role
 
@@ -90,6 +99,56 @@ const UsersPage: React.FC<UsersPageProps> = ({ setCurrentPage }) => {
       setCurrentPage('login');
     }
   };
+
+  //-------------------------------------------------------------------------------------------
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedUser, setSelectedUser] = useState<DisplayUser | null>(null);
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, user: DisplayUser) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedUser(user);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedUser(null);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) throw new Error('Token non trovato');
+      const response = await fetch(`${API_BASE_URL}/users/${selectedUser.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        setUsers(users.filter(u => u.id !== selectedUser.id));
+        handleMenuClose();
+      } else {
+        const data = await response.json();
+        setError(data.message || 'Errore durante l\'eliminazione.');
+        setDialogMessage(data.message || 'Errore durante l\'eliminazione.');
+        setShowDialog(true);
+      }
+    } catch (err: any) {
+      setError(err.message);
+      setDialogMessage(err.message);
+      setShowDialog(true);
+    }
+  };
+
+  const handleEditUser = () => {
+    if (!selectedUser) return;
+    // Passa i dati dell'utente a register (puoi usare uno stato globale, context, o localStorage)
+    localStorage.setItem('editUser', JSON.stringify(selectedUser));
+    setCurrentPage('register');
+    handleMenuClose();
+  };
+  //-------------------------------------------------------------------------------------------
 
   if (!user || (role !== 'admin' && role !== 'agent')) {
     return (
@@ -145,12 +204,13 @@ const UsersPage: React.FC<UsersPageProps> = ({ setCurrentPage }) => {
                 <TableCell className="font-semibold">Email</TableCell>
                 <TableCell className="font-semibold">Ruolo</TableCell>
                 {role === 'admin' && <TableCell className="font-semibold">Creato da (ID)</TableCell>}
+                {(role === 'admin' || role === 'agent') && <TableCell className="font-semibold">Azioni</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
               {users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={role === 'admin' ? 4 : 3} className="text-center py-4">
+                  <TableCell colSpan={role === 'admin' ? 5 : 4} className="text-center py-4">
                     Nessun utente trovato per il tuo ruolo.
                   </TableCell>
                 </TableRow>
@@ -161,11 +221,31 @@ const UsersPage: React.FC<UsersPageProps> = ({ setCurrentPage }) => {
                     <TableCell>{u.email}</TableCell>
                     <TableCell>{u.role}</TableCell>
                     {role === 'admin' && <TableCell>{u.createdBy || 'N/A'}</TableCell>}
+                    {(role === 'admin' || role === 'agent') && (
+                      <TableCell>
+                        <IconButton
+                          aria-label="more"
+                          aria-controls="long-menu"
+                          aria-haspopup="true"
+                          onClick={(e) => handleMenuOpen(e, u)}
+                        >
+                          <MoreVertIcon />
+                        </IconButton>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))
               )}
             </TableBody>
           </Table>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+          >
+            <MenuItem onClick={handleEditUser}>Modifica</MenuItem>
+            <MenuItem onClick={handleDeleteUser}>Elimina</MenuItem>
+          </Menu>
         </TableContainer>
       </Paper>
 

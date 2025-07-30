@@ -31,6 +31,9 @@ export class User {
   })
   role: UserRole;
 
+  @Column({ length: 255, nullable: true }) // Colonna per la password (hashata)
+  createdBy: string;
+
   // Puoi aggiungere altre colonne a seconda delle tue esigenze:
   // @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   // createdAt: Date;
