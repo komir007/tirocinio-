@@ -53,11 +53,20 @@ const UsersPage: React.FC<UsersPageProps> = ({ setCurrentPage }) => {
             'Authorization': `Bearer ${token}`, // Invia il token nell'header Authorization
           },
         });
-
+        
+        
         const data = await response.json();
 
         if (response.ok) {
           setUsers(data);
+          // Dopo setUsers(data);
+          if (role === 'admin') {
+            setUsers(data);
+          } else if (role === 'agent') {
+            setUsers(data.filter((u: DisplayUser) => u.createdBy === user.email));
+          } else {
+            setUsers([]); // client non vede nulla
+          }
         } else {
           // Gestisci errori specifici dal backend (es. 401, 403)
           if (response.status === 401 || response.status === 403) {
@@ -100,6 +109,8 @@ const UsersPage: React.FC<UsersPageProps> = ({ setCurrentPage }) => {
     }
   };
 
+  
+
   //-------------------------------------------------------------------------------------------
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedUser, setSelectedUser] = useState<DisplayUser | null>(null);
@@ -125,6 +136,7 @@ const UsersPage: React.FC<UsersPageProps> = ({ setCurrentPage }) => {
           'Authorization': `Bearer ${token}`,
         },
       });
+      console.log('Delete response:', response, token);
       if (response.ok) {
         setUsers(users.filter(u => u.id !== selectedUser.id));
         handleMenuClose();
@@ -143,9 +155,8 @@ const UsersPage: React.FC<UsersPageProps> = ({ setCurrentPage }) => {
 
   const handleEditUser = () => {
     if (!selectedUser) return;
-    // Passa i dati dell'utente a register (puoi usare uno stato globale, context, o localStorage)
     localStorage.setItem('editUser', JSON.stringify(selectedUser));
-    setCurrentPage('register');
+    setCurrentPage('edit-user');
     handleMenuClose();
   };
   //-------------------------------------------------------------------------------------------

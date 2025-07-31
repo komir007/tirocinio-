@@ -1,16 +1,13 @@
 // src/auth/auth.controller.ts
 import { Controller, Post, Body, UseGuards, Request, Get } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { AuthGuard } from '@nestjs/passport'; // Per la strategia 'local' o 'jwt'
+import { AuthGuard } from '@nestjs/passport';
+import { JwtGuard } from './jwt.guard'; // Per la strategia 'local' o 'jwt'
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @Post('register')
-  async register(@Body() createUserDto: any) {
-    return this.authService.register(createUserDto);
-  }
 
   @Post('login')
   async login(@Body() loginUserDto: any) {
@@ -24,7 +21,7 @@ export class AuthController {
     return this.authService.login(user);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtGuard)
   @Get('profile')
   getProfile(@Request() req) {
     return req.user; // L'oggetto user viene attaccato dal JwtStrategy

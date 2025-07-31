@@ -13,6 +13,7 @@ import HomePage from './index';
 import LoginPage from './login';
 import UsersPage from './users';
 import RegisterPage from './register';
+import EditUserPage from './edit-user'; // Importa la pagina di modifica
 
 // Importa i CSS globali (per il body)
 import './globals.css';
@@ -21,7 +22,7 @@ import './globals.css';
 type SetCurrentPage = (page: string) => void;
 
 export default function App({ Component, pageProps }: AppProps) {
-  const [currentPage, setCurrentPage] = useState<string>('home'); // Stato per gestire la pagina corrente
+  const [currentPage, setCurrentPage] = useState<string>('login'); // Stato per gestire la pagina corrente
 
   // Funzione per renderizzare la pagina basata sullo stato
   const renderPage = () => {
@@ -34,6 +35,8 @@ export default function App({ Component, pageProps }: AppProps) {
         return <UsersPage setCurrentPage={setCurrentPage} />;
       case 'register':
         return <RegisterPage setCurrentPage={setCurrentPage} />;
+      case 'edit-user':
+        return <EditUserPage setCurrentPage={setCurrentPage} />;
       default:
         return <HomePage />;
     }
@@ -49,7 +52,8 @@ export default function App({ Component, pageProps }: AppProps) {
         <CssBaseline /> {/* Fornisce una base coerente per lo stile */}
         <AuthProvider>
           {/* La Navbar ora riceve setCurrentPage per navigare */}
-          <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+
+          {/* <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage}/> */}
           {renderPage()} {/* Renderizza la pagina corrente */}
         </AuthProvider>
       </ThemeProvider>

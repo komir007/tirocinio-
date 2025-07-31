@@ -3,8 +3,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { UserRole } from '../user/user.entity';
-import { CreateUserDto } from '../user/dto/user.dto'; // Importa CreateUserDto
+
 
 @Injectable()
 export class AuthService {
@@ -29,20 +28,5 @@ export class AuthService {
     };
   }
 
-  async register(createUserDto: CreateUserDto) { // Usa il DTO aggiornato
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    const userRole = createUserDto.role || UserRole.CLIENT; // Assicurati di impostare il ruolo di default
-
-    const user = await this.usersService.create({
-      email: createUserDto.email,
-      password: hashedPassword,
-      name: createUserDto.name, // Includi name
-      surname: createUserDto.surname, // Includi surname
-      role: userRole,
-      createdBy: createUserDto.createdBy, // Includi createdBy
-    });
-    // Non restituire la password hashata
-    const { password, ...result } = user;
-    return this.login(result); // Effettua il login dell'utente appena registrato
-  }
+  
 }

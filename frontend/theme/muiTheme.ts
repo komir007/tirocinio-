@@ -9,7 +9,7 @@ export const theme = createTheme({
       main: '#B3B9E1', // Blu/viola più chiaro per azioni secondarie
     },
     background: {
-      default: '#1A1A2E', // Sfondo scuro per il corpo
+      default: '#f2f4f8', // Sfondo scuro per il corpo
       paper: '#FFFFFF', // Bianco per le card/paper
     },
     text: {
@@ -30,7 +30,7 @@ export const theme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: '#2C2C4E', // Un viola scuro leggermente più chiaro per la barra dell'app
+          backgroundColor: '#09404b', // Un viola scuro leggermente più chiaro per la barra dell'app
           borderRadius: '0 0 12px 12px', // Angoli arrotondati inferiori
           boxShadow: '0 4px 15px rgba(0, 0, 0, 0.3)', // Ombra più marcata per la barra
         },

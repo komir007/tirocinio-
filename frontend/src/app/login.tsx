@@ -11,7 +11,8 @@ interface LoginPageProps {
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ setCurrentPage }) => {
-  const { login } = useContext(AuthContext);
+  const authContext = useContext(AuthContext);
+  const login = authContext?.login;
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
