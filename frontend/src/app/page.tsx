@@ -38,7 +38,7 @@ export default function App({ Component, pageProps }: AppProps) {
       case 'edit-user':
         return <EditUserPage setCurrentPage={setCurrentPage} />;
       default:
-        return <HomePage />;
+        return <LoginPage setCurrentPage={setCurrentPage} />;
     }
   };
 
