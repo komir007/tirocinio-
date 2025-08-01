@@ -14,7 +14,7 @@ RUN npm install
 COPY backend/. ./
 
 # Costruisci l'applicazione NestJS (se necessario)
-RUN npm run build
+RUN npm run start:dev
 
 # Comando per avviare l'applicazione NestJS
-CMD ["npm", "run", "start:prod"]
+CMD ["npm", "run", "start:dev"]

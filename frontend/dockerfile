@@ -14,7 +14,7 @@ RUN npm install
 COPY frontend/. ./
 
 # Costruisci l'applicazione React
-RUN npm run build
+RUN npm run dev
 
 # Usa un'immagine Nginx per servire i file statici
 FROM nginx:alpine
