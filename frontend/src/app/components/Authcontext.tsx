@@ -89,8 +89,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     setRole(null);
-    localStorage.removeItem('accessToken'); // Rimuovi il token
-    // In un'app reale, potresti anche voler invalidare il token sul backend
+    localStorage.removeItem('accessToken'); 
+    
   };
 
   if (loading) {
