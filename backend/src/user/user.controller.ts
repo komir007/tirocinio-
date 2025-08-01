@@ -11,9 +11,9 @@ import { JwtGuard } from '../auth/jwt.guard'; // Importa il guard JWT
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // Ottenere tutti gli utenti (solo per admin)
+  // Ottenere tutti gli utenti 
   // Usa il guard JWT per proteggere questa rotta
-  @UseGuards(JwtGuard) // Usa il guard JWT per proteggere questa rotta
+  @UseGuards(JwtGuard) 
   @Get()
   async findAll(@NestRequest() req: Request): Promise<User[]> {
     console.log('Richiesta a /users, utente:', req.user);
@@ -21,23 +21,22 @@ export class UsersController {
   }
   
 
-  // Ottenere un utente per ID (solo per admin o l'utente stesso)
+  // Ottenere un utente per ID
   @UseGuards(JwtGuard)
   @Get(':id')
   async findOne(@Param('id') id: number): Promise<User | null> {
     return this.usersService.findOne(id); // Converti stringa a numero
   }
 
-  // Creare un nuovo utente (può essere pubblico o protetto, es. solo admin crea utenti)
-  // Se la registrazione è gestita da AuthModule, questa rotta potrebbe essere solo per admin
-  @UseGuards(JwtGuard) // Esempio: solo gli admin possono creare utenti
+  // Creare un nuovo utente 
+  @UseGuards(JwtGuard) 
   @Post()
   async create(@Body() createUserDto: CreateUserDto): Promise<User> {
     // La password verrà hashata nel servizio di autenticazione o qui prima di salvare
     return this.usersService.create(createUserDto); // o req.user.id per chi ha creato l'utente
   }
 
-  // Aggiornare un utente (solo per admin o l'utente stesso)
+  // Aggiornare un utente 
   @UseGuards(JwtGuard)
   @Put(':id')
   async update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto): Promise<User | null> {

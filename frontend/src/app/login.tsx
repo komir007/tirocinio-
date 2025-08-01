@@ -1,4 +1,4 @@
-'use client'
+
 import React, { useContext, useState } from 'react';
 import {
   Container, Paper, Typography, TextField, Button, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions
@@ -24,6 +24,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ setCurrentPage }) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    console.log( login);
     try {
       // Assicurati che login non sia null prima di chiamarlo
       if (login) {

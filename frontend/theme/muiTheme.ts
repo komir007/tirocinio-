@@ -43,10 +43,10 @@ export const theme = createTheme({
           boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)', // Ombra più forte per i pulsanti
           '&.MuiButton-containedPrimary': {
             // Applica la sfumatura direttamente per i pulsanti primari "contained"
-            background: 'linear-gradient(to right, #6A5ACD, #483D8B)',
+            background: 'linear-gradient(to right, #09404b, #06424eff)',
             color: 'white',
             '&:hover': {
-              background: 'linear-gradient(to right, #7B68EE, #5A4F9F)', // Leggermente più chiaro al passaggio del mouse
+              background: 'linear-gradient(to right, #115b69ff, #0f6070ff)', // Leggermente più chiaro al passaggio del mouse
               boxShadow: '0 6px 12px rgba(0, 0, 0, 0.3)',
             },
           },

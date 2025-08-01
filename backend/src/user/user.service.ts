@@ -19,16 +19,19 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { id } });
   }
 
+  
+
   // Trova un utente per email (usato spesso per l'autenticazione)
   async findOneByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({ where: { email } });
   }
-  
-
 
   // Crea un nuovo utente
   // userData ora può includere name, surname, email, password, role
   async create(userData: Partial<User>): Promise<User> {
+    if (userData.password) {
+      userData.password = await bcrypt.hash(userData.password, 10);
+    }
     const newUser = this.usersRepository.create(userData);
     return this.usersRepository.save(newUser);
   }

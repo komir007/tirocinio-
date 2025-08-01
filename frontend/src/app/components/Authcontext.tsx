@@ -24,18 +24,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const storedToken = localStorage.getItem('accessToken');
     if (storedToken) {
-      // In un'app reale, qui faresti una chiamata API per validare il token
-      // e recuperare i dettagli dell'utente, per evitare token scaduti o invalidi.
-      // Per questa demo, simuleremo il recupero dei dettagli utente dal token.
       try {
         const payloadBase64 = storedToken.split('.')[1];
         const decodedPayload = JSON.parse(atob(payloadBase64)); // Decodifica il payload del JWT
         
         const currentUser: User = {
-          id: decodedPayload.sub, // 'sub' è spesso l'ID utente nel JWT
-          name: decodedPayload.name || 'Utente', // 'name' potrebbe essere nel payload
-          email: decodedPayload.email || 'email@example.com', // 'email' potrebbe essere nel payload
-          role: decodedPayload.role as Role, // 'role' dovrebbe essere nel payload
+          id: decodedPayload.sub, // 
+          name: decodedPayload.name || 'Utente',
+          email: decodedPayload.email || 'email@example.com', 
+          role: decodedPayload.role as Role, 
         };
         setUser(currentUser);
         setRole(currentUser.role);

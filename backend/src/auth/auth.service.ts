@@ -16,13 +16,14 @@ export class AuthService {
     const user = await this.usersService.findOneByEmail(email);
     if (user && (await bcrypt.compare(pass, user.password))) {
       const { password, ...result } = user;
+      console.log('User validated successfully', result);
       return result;
     }
-    return null;
+     throw new UnauthorizedException('Credenziali non valide');
   }
 
   async login(user: any) {
-    const payload = { email: user.email, sub: user.id, role: user.role };
+    const payload = { email: user.email, sub: user.id, role: user.role, name: user.name };
     return {
       access_token: this.jwtService.sign(payload),
     };

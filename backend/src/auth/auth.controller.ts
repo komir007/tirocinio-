@@ -1,8 +1,9 @@
 // src/auth/auth.controller.ts
-import { Controller, Post, Body, UseGuards, Request, Get } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get,  } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtGuard } from './jwt.guard'; // Per la strategia 'local' o 'jwt'
+import { UnauthorizedException } from '@nestjs/common/exceptions/unauthorized.exception';
 
 @Controller('auth')
 export class AuthController {
@@ -16,7 +17,8 @@ export class AuthController {
       loginUserDto.password,
     );
     if (!user) {
-      console.log("error log");//throw new UnauthorizedException('Credenziali non valide');
+      console.log("error log");
+      throw new UnauthorizedException('Credenziali non valide');
     }
     return this.authService.login(user);
   }

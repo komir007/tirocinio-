@@ -17,7 +17,7 @@ import { JwtGuard } from './jwt.guard'; // Importa il guard JWT
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: '123', // Usa variabile d'ambiente in produzione!
+        secret: '123', // Usa variabile d'ambiente in produzione! dopo verra modificata e usata una variabile d'ambiente
         signOptions: { expiresIn: '60m' }, // Scadenza del token
       }),
       inject: [ConfigService],

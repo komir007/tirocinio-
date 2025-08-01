@@ -1,4 +1,4 @@
-// src/users/dto/user.dto.ts
+// src/user/dto/user.dto.ts
 import { IsEmail, IsString, MinLength, IsEnum, IsOptional, MaxLength } from 'class-validator';
 import { UserRole } from '../user.entity';
 

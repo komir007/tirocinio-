@@ -51,7 +51,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <ThemeProvider theme={theme}>
         <CssBaseline /> {/* Fornisce una base coerente per lo stile */}
         <AuthProvider>
-          {/* La Navbar ora riceve setCurrentPage per navigare */}
+          { currentPage !== 'login' && (<Navbar currentPage={currentPage} setCurrentPage={setCurrentPage}/> ) }
 
           {/* <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage}/> */}
           {renderPage()} {/* Renderizza la pagina corrente */}
