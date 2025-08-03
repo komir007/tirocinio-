@@ -11,7 +11,6 @@ docker run --name my-mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=miodb -
 e copire:
 DATABASE_URL="mysql://devuser:devpass@localhost:3306/miodb"
 
-JWT_SECRET=laMiaChiaveSegretaMoltoLungaEComplessaPerJWT
 
 /-----------------------------------------------------------------------------------/
 
@@ -24,7 +23,7 @@ npm run start:dev
 /----------------------------------------------------------------------------------/
 
 
-// sempre nel terminale eseguire :
+// aprire nuovo terminale ed eseguire :
 docker exec -it my-mysql mysql -u devuser -pdevpass -D miodb
  
 USE miodb;
@@ -48,5 +47,6 @@ http://localhost:3000/
 login :
 email : mariorossi@gmail.com
 password : 1234567
+
 
 
