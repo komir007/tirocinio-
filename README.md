@@ -8,7 +8,7 @@ docker run --name my-mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=miodb -
 
 /-------------------------------------------------------------------------------------------------------------------------------/
 //creare il il file .env nel backend, percorso ./backend/.env 
-e copire:
+e copiare:
 DATABASE_URL="mysql://devuser:devpass@localhost:3306/miodb"
 
 
@@ -23,7 +23,7 @@ npm run start:dev
 /-------------------------------------------------------------------------------------------------------------------------------/
 
 
-// aprire nuovo terminale ed eseguire :
+// aprire un nuovo terminale ed eseguire :
 docker exec -it my-mysql mysql -u devuser -pdevpass -D miodb
  
 USE miodb;
@@ -36,7 +36,7 @@ INSERT INTO user (name, email, password, role) VALUES ('mario rossi', 'marioross
 /-------------------------------------------------------------------------------------------------------------------------------/
 //aprire in un nuovo terminale ed eseguire
 
-cd frontend
+cd ./frontend
 npm install
 npm run dev
 
@@ -46,6 +46,7 @@ http://localhost:3000/
 login :
 email : mariorossi@gmail.com
 password : 1234567
+
 
 
 
