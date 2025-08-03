@@ -1,4 +1,4 @@
-uso Windows con WSL nel terminale 
+uso Windows con WSL nel terminale / docker compose non funzione corretamente
 /------------------------------------------------------------------------------------/
 //creazione database
 // Per creare il database MySQL e l'utente, esegui i seguenti comandi nel terminale:
@@ -48,4 +48,5 @@ http://localhost:3000/
 login :
 email : mariorossi@gmail.com
 password : 1234567
+
 
