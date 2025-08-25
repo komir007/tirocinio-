@@ -11,7 +11,7 @@ import { JwtGuard } from '../auth/jwt.guard'; // Importa il guard JWT
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // Ottenere tutti gli utenti 
+   // Ottenere tutti gli utenti 
   // Usa il guard JWT per proteggere questa rotta
   @UseGuards(JwtGuard) 
   @Get()
@@ -60,4 +60,5 @@ export class UsersController {
     return this.usersService.findOne((req.user as any).userId);
   }
   
+
 }

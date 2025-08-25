@@ -1,3 +1,0 @@
-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
-
-docker exec -it mysql-nest-next mysql -u devuser -pdevpass -D miodb

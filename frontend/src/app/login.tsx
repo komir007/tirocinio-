@@ -30,8 +30,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ setCurrentPage }) => {
       if (login) {
         const result = await login(email, password);
         if (result.success) {
-          setDialogMessage('Login effettuato con successo!');
-          setShowDialog(true);
+          //setDialogMessage('Login effettuato con successo!');
+          //setShowDialog(true);
           // Redirect based on role after dialog closes
           setTimeout(() => {
             setShowDialog(false);
@@ -40,7 +40,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ setCurrentPage }) => {
             } else {
               setCurrentPage('home'); // Clients don't have a specific internal page
             }
-          }, 1500); // Give user time to read message
+          }, 0); // Give user time to read message
         }
       } else {
         throw new Error("Auth context login function is not available.");
@@ -112,3 +112,4 @@ const LoginPage: React.FC<LoginPageProps> = ({ setCurrentPage }) => {
 };
 
 export default LoginPage;
+
