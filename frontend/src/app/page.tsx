@@ -1,62 +1,55 @@
-'use client'
-import React, { useState } from 'react';
-import { AppProps } from 'next/app'; // Importa AppProps da next/app
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { AuthProvider } from './components/Authcontext';
-import { theme } from '../../theme/muiTheme';
-import Navbar from './components/Navbar'; // Importa la Navbar
+"use client";
+import Image from "next/image";
+import { Box, Typography, Button, CircularProgress } from "@mui/material";
+import React, { useContext, useEffect } from "react";
+import { AuthContext } from "./components/Authcontext";
+import { useRouter } from "next/navigation";
+import BasicBreadcrumbs from "./components/breadcrumbd";
 
-// Importa le pagine che useremo per la navigazione interna, dato che non usiamo next/router
-// Assicurati che questi import si riferiscano ai nuovi file .tsx
-import HomePage from './index';
-import LoginPage from './login';
-import UsersPage from './users';
-import RegisterPage from './register';
-import EditUserPage from './edit-user'; // Importa la pagina di modifica
+export default function Homepage() {
+  const authContext = useContext(AuthContext);
+  const user = authContext?.user;
+  const router = useRouter();
 
-// Importa i CSS globali (per il body)
-import './globals.css';
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (!user) {
+        router.replace("/login");
+      }
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [user, router]);
 
-// Definisci un tipo per setCurrentPage per passarlo alle pagine
-type SetCurrentPage = (page: string) => void;
-
-export default function App({ Component, pageProps }: AppProps) {
-  const [currentPage, setCurrentPage] = useState<string>('login'); // Stato per gestire la pagina corrente
-
-  // Funzione per renderizzare la pagina basata sullo stato
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'home':
-        return <HomePage />;
-      case 'login':
-        return <LoginPage setCurrentPage={setCurrentPage} />;
-      case 'users':
-        return <UsersPage setCurrentPage={setCurrentPage} />;
-      case 'register':
-        return <RegisterPage setCurrentPage={setCurrentPage} />;
-      case 'edit-user':
-        return <EditUserPage setCurrentPage={setCurrentPage} />;
-      default:
-        return <LoginPage setCurrentPage={setCurrentPage} />;
-    }
-  };
-
-  return (
-    <>
-      {/* CDN per Tailwind CSS e Google Fonts (Inter) */}
-      <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
-      <ThemeProvider theme={theme}>
-        <CssBaseline /> {/* Fornisce una base coerente per lo stile */}
-        <AuthProvider>
-          { currentPage !== 'login' && (<Navbar currentPage={currentPage} setCurrentPage={setCurrentPage}/> ) }
-
-          {/* <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage}/> */}
-          {renderPage()} {/* Renderizza la pagina corrente */}
-        </AuthProvider>
-      </ThemeProvider>
-    </>
-  );
+  // mentre aspettiamo l'inizializzazione mostra un loader (o null per niente)
+  if (!user) {
+    return (
+      <Box
+        sx={{
+          height: "calc(100vh - 92px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  } else {
+    return (
+      // Nota: il Drawer/AppBar ora è gestito dal wrapper `ResponsiveDrawer` in layout.tsx
+      <Box display="flex" flexDirection="column" height="100%">
+        <Box sx={{ marginTop: 0 }}>
+          <Box sx={{ marginTop: 4, marginBottom: 1, marginX: 3 }}>
+            <BasicBreadcrumbs />
+            <Typography variant="h5" sx={{ marginTop: 1 }}>
+              Home
+            </Typography>
+            <Typography variant="body2" sx={{ marginTop: 1 }}>
+              qui trovi la homepage :D
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+    );
+  }
 }
