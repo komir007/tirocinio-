@@ -52,8 +52,27 @@ export class UsersService {
     await this.usersRepository.delete(id);
   }
 
-  // Trova tutti gli utenti
-  async findAll(): Promise<User[]> {
-    return this.usersRepository.find();
-  }
+  
+  // Trova tutti gli utenti, con filtraggio per ruolo
+  /**
+   * Trova tutti gli utenti secondo le regole:
+   * - admin: restituisce tutti
+   * - agent: restituisce solo quelli creati da lui (createdBy = email)
+   * - client: restituisce array vuoto
+   * @param role ruolo utente loggato
+   * @param email email utente loggato (necessaria per agent)
+   */
+  async findAll( email?: string): Promise<User[]> {
+    const role = (email) ? (await this.findOneByEmail(email))?.role : null;
+    console.log('Ruolo utente:', role);
+    if (!role || role === 'admin') {
+      // Admin vede tutti
+      return this.usersRepository.find();
+    }
+    if (role === 'agent' && email) {
+      // Agent vede solo utenti creati da lui
+      return this.usersRepository.find({ where: { createdBy: email } });
+    }
+    // Client o altri ruoli non vedono nulla
+    return [];
 }
