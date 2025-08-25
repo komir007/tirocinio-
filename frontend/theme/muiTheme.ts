@@ -9,8 +9,8 @@ export const theme = createTheme({
       main: '#B3B9E1', // Blu/viola più chiaro per azioni secondarie
     },
     background: {
-      default: '#f2f4f8', // Sfondo scuro per il corpo
-      paper: '#FFFFFF', // Bianco per le card/paper
+      default: '#000000ff', // Sfondo scuro per il corpo
+      paper: '#bb0000ff', // Bianco per le card/paper
     },
     text: {
       primary: '#333333', // Testo scuro predefinito sulle card chiare

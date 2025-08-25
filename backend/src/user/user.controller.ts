@@ -16,8 +16,10 @@ export class UsersController {
   @UseGuards(JwtGuard) 
   @Get()
   async findAll(@NestRequest() req: Request): Promise<User[]> {
-    console.log('Richiesta a /users, utente:', req.user);
-    return this.usersService.findAll();
+  // req.user contiene i dati dell'utente autenticato (userId, email, role)
+  const userEmail = (req.user as any)?.email;
+  console.log('Email utente:', userEmail);
+  return this.usersService.findAll(userEmail);
   }
   
 

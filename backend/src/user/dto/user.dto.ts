@@ -29,6 +29,12 @@ export class CreateUserDto {
   @MaxLength(255)
   createdBy?: string; // Reso opzionale
 
+  
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  createdAt?: Date;
+
 }
 
 export class UpdateUserDto {
