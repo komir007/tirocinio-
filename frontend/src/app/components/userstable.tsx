@@ -27,7 +27,8 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import TableSortLabel from "@mui/material/TableSortLabel";
-import AddIcon from '@mui/icons-material/Add';
+import AddIcon from "@mui/icons-material/Add";
+
 type SortOrder = "asc" | "desc";
 
 interface UserRow {
@@ -91,8 +92,6 @@ export default function UsersTable() {
   const columns = isAgent(authContext?.user?.role)
     ? allcolumns.filter((col) => col.id !== "role")
     : allcolumns;
-  
-
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -266,17 +265,24 @@ export default function UsersTable() {
                     align={column.align}
                     style={{ minWidth: column.minWidth }}
                     sx={{
+                      fontWeight: 600,
                       backgroundColor: "#f5f5f5",
                       cursor: column.id === "email" ? "default" : "pointer",
                     }}
                   >
                     {column.id === "email" ? (
-                      <span>{column.label}</span>
+                      <Box>{column.label}</Box>
                     ) : (
                       <TableSortLabel
                         active={true}
                         direction={sortBy === column.id ? order : "asc"}
                         onClick={() => handleRequestSort(column.id)}
+                        sx={{
+                          color: '#637381',
+                          fontWeight: 600,
+                          "& .MuiTableSortLabel-icon": { color: '#637381 !important' },
+                          
+                        }}
                       >
                         {column.label}
                       </TableSortLabel>
@@ -293,7 +299,7 @@ export default function UsersTable() {
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((row) => (
                   <TableRow hover role="checkbox" tabIndex={-1} key={row.email}>
-                    <TableCell padding="normal">
+                    <TableCell sx={{fontWeight: 600}} padding="normal">
                       <Box display="flex" alignItems="center">
                         <Avatar sx={{ width: 36, height: 36, mr: 1 }}>
                           {row.name.slice(0, 2).toUpperCase()}
