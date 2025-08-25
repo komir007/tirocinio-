@@ -18,8 +18,10 @@ export class UsersController {
   async findAll(@NestRequest() req: Request): Promise<User[]> {
   // req.user contiene i dati dell'utente autenticato (userId, email, role)
   const userEmail = (req.user as any)?.email;
+  const userRole = (req.user as any)?.role;
+
   console.log('Email utente:', userEmail);
-  return this.usersService.findAll(userEmail);
+  return this.usersService.findAll(userEmail, userRole);
   }
   
 

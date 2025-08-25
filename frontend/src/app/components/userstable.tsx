@@ -27,7 +27,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import TableSortLabel from "@mui/material/TableSortLabel";
-
+import AddIcon from '@mui/icons-material/Add';
 type SortOrder = "asc" | "desc";
 
 interface UserRow {
@@ -45,10 +45,10 @@ const allcolumns: {
   minWidth: number;
   align?: "left" | "right" | "center";
 }[] = [
-  { id: "name", label: "Name", minWidth: 100 },
-  { id: "role", label: "Role", minWidth: 100 },
-  { id: "email", label: "Email", minWidth: 100 },
-  { id: "data_di_creazione", label: "Data di Creazione", minWidth: 100 },
+  { id: "name", label: "Name", minWidth: 50 },
+  { id: "role", label: "Role", minWidth: 50 },
+  { id: "email", label: "Email", minWidth: 50 },
+  { id: "data_di_creazione", label: "Data di Creazione", minWidth: 50 },
 ];
 
 const formatDateOnly = (iso?: string): string => {
@@ -91,6 +91,8 @@ export default function UsersTable() {
   const columns = isAgent(authContext?.user?.role)
     ? allcolumns.filter((col) => col.id !== "role")
     : allcolumns;
+  
+
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -233,6 +235,7 @@ export default function UsersTable() {
           color="primary"
           sx={{ borderRadius: 2 }}
         >
+          <AddIcon sx={{ mr: 1 }} />
           Aggiungi utente
         </Button>
       </Box>

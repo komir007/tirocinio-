@@ -25,7 +25,7 @@ export class AuthController {
 
   @UseGuards(JwtGuard)
   @Get('profile')
-  getProfile(@Request() req) {
+  async getProfile(@Request() req) {
     return req.user; // L'oggetto user viene attaccato dal JwtStrategy
   }
 }

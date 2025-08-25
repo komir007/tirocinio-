@@ -1,0 +1,7 @@
+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
+
+docker exec -it mysql-nest-next mysql -u devuser -pdevpass -D miodb
+
+DATABASE_URL="mysql://devuser:devpass@localhost:3306/miodb"
+
+JWT_SECRET=laMiaChiaveSegretaMoltoLungaEComplessaPerJWT

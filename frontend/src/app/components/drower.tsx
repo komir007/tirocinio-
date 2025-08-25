@@ -246,7 +246,6 @@ export default function ResponsiveDrawer(props: Props) {
 
   return (
     <Box sx={{ display: "flex" }}>
-      <CssBaseline />
       <AppBar
         elevation={1}
         position="fixed"
@@ -257,6 +256,7 @@ export default function ResponsiveDrawer(props: Props) {
           ml: `${currentWidth}px`,
           zIndex: theme.zIndex.drawer + 1,
           backgroundColor: "#ffffffff",
+          
         })}
       >
         <Toolbar
@@ -265,36 +265,20 @@ export default function ResponsiveDrawer(props: Props) {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            px: { xs: 1, sm: 2 },
+           
           }}
         >
           <Box display="flex" alignItems="center">
             {/* Menu icon: su xs toggle la collapse (ora non usiamo più drawer mobile) */}
             <Typography
-              sx={{ display: collapsed ? "block" : "none", color: "#000" }}
+              sx={{ display: collapsed ? "block" : "none", color: "#000"}}
               variant="h6"
             >
               LOGO
             </Typography>
-            <IconButton
-              color="primary"
-              aria-label="toggle drawer collapsed"
-              edge="start"
-              onClick={toggleCollapse}
-              sx={{ mr: 2, display: { xs: "none", sm: "none" } }}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Typography
-              variant="h6"
-              sx={{ display: { xs: "none", sm: "block" } }}
-            >
-              {/* header title (opzionale) */}
-            </Typography>
           </Box>
 
           <Box
-            width="92px"
             display="flex"
             justifyContent="center"
             alignItems="center"
@@ -323,7 +307,7 @@ export default function ResponsiveDrawer(props: Props) {
             "& .MuiDrawer-paper": {
               boxSizing: "border-box",
               width: currentWidth,
-              backgroundColor: "#09404B",
+              backgroundColor: "primary.main",
               transition: (theme) =>
                 theme.transitions.create("width", {
                   easing: theme.transitions.easing.sharp,

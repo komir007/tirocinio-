@@ -61,8 +61,8 @@ export class UsersService {
    * @param role ruolo utente loggato
    * @param email email utente loggato (necessaria per agent)
    */
-  async findAll( email?: string): Promise<User[]> {
-    const role = (email) ? (await this.findOneByEmail(email))?.role : null;
+  async findAll( email?: string, role?: string): Promise<User[]> {
+    console.log('Email utente:', email);
     console.log('Ruolo utente:', role);
     if (!role || role === 'admin') {
       // Admin vede tutti
