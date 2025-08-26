@@ -5,6 +5,7 @@ import React, { useContext, useEffect } from "react";
 import { AuthContext } from "./components/Authcontext";
 import { useRouter } from "next/navigation";
 import BasicBreadcrumbs from "./components/breadcrumbd";
+import AuthDebugPanel from "./components/AuthDebugPanel";
 
 export default function Homepage() {
   const authContext = useContext(AuthContext);
@@ -16,7 +17,7 @@ export default function Homepage() {
       if (!user) {
         router.replace("/login");
       }
-    }, 1000);
+    }, 5000);
     return () => clearTimeout(t);
   }, [user, router]);
 
@@ -47,6 +48,9 @@ export default function Homepage() {
             <Typography variant="body2" sx={{ marginTop: 1 }}>
               qui trovi la homepage :D
             </Typography>
+            
+            {/* Debug panel solo in development */}
+            {process.env.NODE_ENV === 'development' && <AuthDebugPanel />}
           </Box>
         </Box>
       </Box>

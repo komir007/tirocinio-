@@ -17,6 +17,7 @@ export interface AuthContextType {
   logout: () => void;
   loading: boolean;
   fetchWithAuth?: (input: RequestInfo, init?: RequestInit) => Promise<Response>;
+  getTokenInfo?: () => { isValid: boolean; expiresIn?: number; expiresAt?: Date } | null;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -42,22 +43,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const scheduleLogout = (expSeconds?: number) => {
     clearLogoutTimer();
     if (!expSeconds) return;
-    const ms = expSeconds * 1000 - Date.now();
+    // expSeconds è già un timestamp Unix, quindi moltiplichiamo per 1000 per ottenere millisecondi
+    const expirationTime = expSeconds * 1000;
+    const currentTime = Date.now();
+    const ms = expirationTime - currentTime;
+    
     if (ms <= 0) {
       // già scaduto
+      console.log("Token già scaduto, eseguendo logout immediato");
       handleLogoutClean();
     } else {
+      console.log(`Token scadrà tra ${Math.round(ms / 1000)} secondi`);
       logoutTimerRef.current = window.setTimeout(() => {
+        console.log("Token scaduto, eseguendo logout automatico");
         handleLogoutClean();
       }, ms);
     }
   };
 
   const handleLogoutClean = () => {
+    console.log("Eseguendo logout e pulizia dello stato");
     setUser(null);
     setRole(null);
     localStorage.removeItem("accessToken");
     clearLogoutTimer();
+    
+    // Redirect automatico al login se non siamo già nella pagina di login
+    if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+      window.location.href = '/login';
+    }
   };
 
   useEffect(() => {
@@ -155,6 +169,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return res;
   };
 
+  // Funzione di debug per verificare lo stato del token
+  const getTokenInfo = () => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) return null;
+    
+    try {
+      const payloadBase64 = token.split(".")[1];
+      const decodedPayload = JSON.parse(atob(payloadBase64));
+      const exp = decodedPayload.exp as number | undefined;
+      
+      if (!exp) return { isValid: false };
+      
+      const now = Date.now() / 1000;
+      const isValid = now < exp;
+      const expiresIn = exp - now;
+      const expiresAt = new Date(exp * 1000);
+      
+      return {
+        isValid,
+        expiresIn: Math.round(expiresIn),
+        expiresAt
+      };
+    } catch (e) {
+      return { isValid: false };
+    }
+  };
+
   const contextValue: AuthContextType = {
     user,
     role,
@@ -162,6 +203,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     logout,
     loading,
     fetchWithAuth,
+    getTokenInfo,
   };
 
   return (
