@@ -17,6 +17,7 @@ import { useContext, useState, useEffect } from "react";
 
 export default function Loginpage() {
   const [open, setOpen] = useState(false);
+  const [errorOpen, setErrorOpen] = useState(false); // Nuovo stato per l'alert di errore
   const router = useRouter();
   const authContext = useContext(AuthContext);
   const user = authContext?.user;
@@ -30,6 +31,7 @@ export default function Loginpage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setErrorOpen(false); // Chiudi l'alert di errore precedente
     const form = e.currentTarget as HTMLFormElement;
     const formData = new FormData(form);
     const email = String(formData.get("email") || "");
@@ -38,6 +40,7 @@ export default function Loginpage() {
     try {
       if (!login) {
         setError("Servizio di autenticazione non disponibile");
+        setErrorOpen(true); // Mostra l'alert di errore
         setLoading(false);
         return;
       }
@@ -50,10 +53,12 @@ export default function Loginpage() {
         }, 1000);
       } else {
         setError(result?.message || "Credenziali non valide");
+        setErrorOpen(true); // Mostra l'alert di errore
         setLoading(false); // Riabilita il bottone in caso di errore
       }
     } catch (err) {
       setError("Errore di rete o del server");
+      setErrorOpen(true); // Mostra l'alert di errore
       setLoading(false); // Riabilita il bottone in caso di errore
     }
   };
@@ -64,6 +69,14 @@ export default function Loginpage() {
   ) => {
     if (reason === "clickaway") return;
     setOpen(false);
+  };
+
+  const handleErrorClose = (
+    _event?: React.SyntheticEvent | Event,
+    reason?: string
+  ) => {
+    if (reason === "clickaway") return;
+    setErrorOpen(false);
   };
 
   useEffect(() => {
@@ -94,6 +107,7 @@ export default function Loginpage() {
       <Box
         flex={1}
         sx={{
+          bgcolor: "grey.100",
           height: "100%",
           display: "flex",
           alignItems: "center",
@@ -151,9 +165,6 @@ export default function Loginpage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            {error && (
-              <div style={{ color: "red", marginBottom: 8 }}>{error}</div>
-            )}
             <Button
               type="submit"
               variant="contained"
@@ -167,6 +178,8 @@ export default function Loginpage() {
             </Button>
           </form>
         </Paper>
+
+        {/* Snackbar per successo */}
         <Snackbar
           open={open}
           autoHideDuration={1000}
@@ -179,6 +192,22 @@ export default function Loginpage() {
             sx={{ width: "100%" }}
           >
             Accesso effettuato con successo!
+          </Alert>
+        </Snackbar>
+
+        {/* Snackbar per errori */}
+        <Snackbar
+          open={errorOpen}
+          autoHideDuration={6000}
+          onClose={handleErrorClose}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        >
+          <Alert
+            onClose={handleErrorClose}
+            severity="error"
+            sx={{ width: "100%" }}
+          >
+            {error}
           </Alert>
         </Snackbar>
       </Box>

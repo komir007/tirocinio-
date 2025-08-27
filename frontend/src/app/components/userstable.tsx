@@ -487,7 +487,7 @@ export default function UsersTable() {
                     style={{ minWidth: column.minWidth }}
                     sx={{
                       fontWeight: 600,
-                      backgroundColor: "#f5f5f5",
+                      backgroundColor: "#F4F6F8",
                       cursor: column.id === "email" ? "default" : "pointer",
                       color: '#637381', // Colore del testo per tutte le label
                     }}
@@ -530,7 +530,7 @@ export default function UsersTable() {
         </TableContainer>
         <Divider sx={{ my: 0, px: -1 }} />
         <TablePagination
-          rowsPerPageOptions={[7, 25, 100, 300]}
+          rowsPerPageOptions={[7, 25, 100, 300, 1000, 10000]}
           component="div"
           count={filteredAndSortedRows.length}
           rowsPerPage={rowsPerPage}
