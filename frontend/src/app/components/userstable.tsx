@@ -487,7 +487,7 @@ export default function UsersTable() {
                     style={{ minWidth: column.minWidth }}
                     sx={{
                       fontWeight: 600,
-                      backgroundColor: "#f5f5f5",
+                      backgroundColor: "#F4F6F8",
                       cursor: column.id === "email" ? "default" : "pointer",
                       color: '#637381', // Colore del testo per tutte le label
                     }}

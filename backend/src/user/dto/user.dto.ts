@@ -1,5 +1,5 @@
 // src/user/dto/user.dto.ts
-import { IsEmail, IsString, MinLength, IsEnum, IsOptional, MaxLength } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsEnum, IsOptional, MaxLength, IsDate } from 'class-validator';
 import { UserRole } from '../user.entity';
 
 export class CreateUserDto {
@@ -31,8 +31,7 @@ export class CreateUserDto {
 
   
   @IsOptional()
-  @IsString()
-  @MaxLength(255)
+  @IsDate()
   createdAt?: Date;
 
 }

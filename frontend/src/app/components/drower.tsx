@@ -125,6 +125,7 @@ export default function ResponsiveDrawer(props: Props) {
           size="small"
           sx={{
             ml: collapsed ? 0 : 1,
+            
             // transform: collapsed ? "rotate(180deg)" : "none",
             color: "#fff",
             bgcolor: "transparent",
