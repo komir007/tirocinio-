@@ -530,7 +530,7 @@ export default function UsersTable() {
         </TableContainer>
         <Divider sx={{ my: 0, px: -1 }} />
         <TablePagination
-          rowsPerPageOptions={[7, 25, 100, 300]}
+          rowsPerPageOptions={[7, 25, 100, 300, 1000, 10000]}
           component="div"
           count={filteredAndSortedRows.length}
           rowsPerPage={rowsPerPage}
