@@ -2,6 +2,7 @@
 import "./globals.css";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "./components/Authcontext";
+import { CustomizationProvider } from "./components/Customization/components/CustomizableProvider";
 import ResponsiveDrawer from "./components/drower";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -16,8 +17,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <AuthProvider>
-            {/* Ora il drawer gestisce il main e i margini dinamici */}
-            <ResponsiveDrawer>{children}</ResponsiveDrawer>
+            <CustomizationProvider>
+              {/* Ora il drawer gestisce il main e i margini dinamici */}
+              <ResponsiveDrawer>{children}</ResponsiveDrawer>
+            </CustomizationProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

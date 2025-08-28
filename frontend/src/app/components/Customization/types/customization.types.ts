@@ -32,6 +32,9 @@ export interface FormField {
   placeholder?: string;
   defaultOrder?: number;
   section: string;
+  readOnly?: boolean;
+  hidden?: boolean;
+  order?: number;
   options?: Array<{ value: string; label: string }>;
   validation?: {
     min?: number;
@@ -47,6 +50,10 @@ export interface FormSection {
   description?: string;
   defaultOrder?: number;
   collapsible?: boolean;
+  readOnly?: boolean;
+  hidden?: boolean;
+  collapsed?: boolean;
+  order?: number;
   fields: FormField[];
 }
 
