@@ -1,0 +1,148 @@
+import { FormSection } from '../types/customization.types';
+
+export const DEFAULT_FORM_CONFIGS = {
+  'user-registration': {
+    sections: [
+      {
+        id: 'personal-info',
+        label: 'Informazioni Personali',
+        description: 'Dati anagrafici dell\'utente',
+        defaultOrder: 1,
+        collapsible: false,
+        fields: [
+          {
+            id: 'name',
+            label: 'Nome',
+            type: 'text' as const,
+            required: true,
+            defaultOrder: 1,
+            section: 'personal-info',
+            validation: {
+              min: 2,
+              max: 50,
+              message: 'Il nome deve essere tra 2 e 50 caratteri'
+            }
+          },
+          {
+            id: 'email',
+            label: 'Email',
+            type: 'email' as const,
+            required: true,
+            defaultOrder: 2,
+            section: 'personal-info',
+            validation: {
+              pattern: '^[^@]+@[^@]+\.[^@]+$',
+              message: 'Inserisci un indirizzo email valido'
+            }
+          }
+        ]
+      },
+      {
+        id: 'security',
+        label: 'Sicurezza',
+        description: 'Credenziali di accesso',
+        defaultOrder: 2,
+        collapsible: false,
+        fields: [
+          {
+            id: 'password',
+            label: 'Password',
+            type: 'password' as const,
+            required: true,
+            defaultOrder: 1,
+            section: 'security',
+            validation: {
+              min: 8,
+              message: 'La password deve essere di almeno 8 caratteri'
+            }
+          }
+        ]
+      },
+      {
+        id: 'permissions',
+        label: 'Permessi',
+        description: 'Ruolo e autorizzazioni',
+        defaultOrder: 3,
+        collapsible: true,
+        fields: [
+          {
+            id: 'role',
+            label: 'Ruolo',
+            type: 'select' as const,
+            required: true,
+            defaultOrder: 1,
+            section: 'permissions',
+            options: [
+              { value: 'admin', label: 'Amministratore' },
+              { value: 'agent', label: 'Agente' },
+              { value: 'client', label: 'Cliente' }
+            ]
+          }
+        ]
+      }
+    ] as FormSection[]
+  },
+
+  'user-edit': {
+    sections: [
+      {
+        id: 'user-info',
+        label: 'Informazioni Utente',
+        defaultOrder: 1,
+        fields: [
+          {
+            id: 'name',
+            label: 'Nome',
+            type: 'text' as const,
+            required: true,
+            defaultOrder: 1,
+            section: 'user-info'
+          },
+          {
+            id: 'email',
+            label: 'Email',
+            type: 'email' as const,
+            required: true,
+            defaultOrder: 2,
+            section: 'user-info'
+          }
+        ]
+      },
+      {
+        id: 'security',
+        label: 'Sicurezza',
+        defaultOrder: 2,
+        fields: [
+          {
+            id: 'password',
+            label: 'Nuova Password',
+            type: 'password' as const,
+            required: false,
+            defaultOrder: 1,
+            section: 'security'
+          }
+        ]
+      },
+      {
+        id: 'permissions',
+        label: 'Permessi',
+        defaultOrder: 3,
+        fields: [
+          {
+            id: 'role',
+            label: 'Ruolo',
+            type: 'select' as const,
+            required: true,
+            defaultOrder: 1,
+            section: 'permissions',
+            options: [
+              { value: 'admin', label: 'Amministratore' },
+              { value: 'agent', label: 'Agente' },
+              { value: 'client', label: 'Cliente' }
+            ]
+          }
+        ]
+      }
+    ] as FormSection[]
+  }
+};

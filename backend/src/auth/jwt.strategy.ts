@@ -18,8 +18,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user) {
       throw new UnauthorizedException();
     }
-    console.log('Inside JWT Strategy Validate');
-    console.log(payload);
+    //console.log('Inside JWT Strategy Validate');
+    //console.log(payload);
     return { userId: payload.sub, email: payload.email, role: payload.role, }; // Questo sarà disponibile in req.user
   }
 }

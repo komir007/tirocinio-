@@ -88,6 +88,7 @@ export default function Registration() {
         }}
       >
         <Box
+          aria-label="Registration Form"
           component="form"
           onSubmit={handleSubmit}
           display="flex"
