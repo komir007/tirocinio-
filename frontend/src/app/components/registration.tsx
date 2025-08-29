@@ -11,6 +11,7 @@ import { useContext } from "react";
 import { AuthContext } from "./Authcontext";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
+import { Divider } from "@mui/material";
 
 export default function Registration() {
   const authContext = useContext(AuthContext);
@@ -37,30 +38,35 @@ export default function Registration() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem("accessToken");
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'}/users`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          name: form.name,
-          email: form.email,
-          password: form.password,
-          role: isAgent ? "client" : form.role, // forza client se agent
-          createdBy: form.createdBy,
-        }),
-      });
-      if (!res.ok) throw new Error('Errore nella registrazione utente');
+      const res = await fetch(
+        `${
+          process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"
+        }/users`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            name: form.name,
+            email: form.email,
+            password: form.password,
+            role: isAgent ? "client" : form.role, // forza client se agent
+            createdBy: form.createdBy,
+          }),
+        }
+      );
+      if (!res.ok) throw new Error("Errore nella registrazione utente");
       setSnackbarOpen(true);
       setTimeout(() => {
         setSnackbarOpen(false);
-        router.push('/user');
+        router.push("/user");
       }, 1000);
     } catch (err) {
-      alert('Errore durante la registrazione utente');
+      alert("Errore durante la registrazione utente");
       console.error(err);
     }
   };
@@ -81,7 +87,7 @@ export default function Registration() {
           height: "100%",
           maxHeight: "100vh",
           borderRadius: 3,
-          p: 4,
+
           bgcolor: "#fff",
           display: "flex",
           flexDirection: "column",
@@ -92,58 +98,135 @@ export default function Registration() {
           component="form"
           onSubmit={handleSubmit}
           display="flex"
-          flexDirection={{ xs: "column", sm: "row" }}
-          gap={2}
-          mb={4}
+          flexDirection="column"
           flexGrow={1}
         >
-          <TextField
-            name="name"
-            label="Nome"
-            value={form.name}
-            onChange={handleChange}
-            required
-            fullWidth
-            sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-          />
-          <TextField
-            name="email"
-            label="Email"
-            type="email"
-            value={form.email}
-            onChange={handleChange}
-            required
-            fullWidth
-            sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-          />
-          <TextField
-            name="password"
-            label="Password"
-            type="password"
-            value={form.password}
-            onChange={handleChange}
-            required
-            fullWidth
-            sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-          />
-          {!isAgent && (
-            <TextField
-              name="role"
-              label="Ruolo"
-              select
-              value={form.role}
-              onChange={handleChange}
-              required
-              fullWidth
-              sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+          <Box
+            key="form_anagrafica"
+            display="flex"
+            flexDirection="column"
+            gap={2}
+            m={2}
+          >
+            <Typography variant="subtitle1">
+              Informazioni anagrafiche
+            </Typography>
+            <Box
+              display="flex"
+              flexDirection={{ xs: "column", sm: "row" }}
+              width={{ xs: "100%", sm: "50%" }}
+              gap={2}
             >
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="agent">Agent</MenuItem>
-              <MenuItem value="client">Client</MenuItem>
-            </TextField>
-          )}
+              <TextField
+                name="name"
+                label="Nome"
+                value={form.name}
+                onChange={handleChange}
+                required
+                fullWidth
+                sx={{
+                  flex: 1,
+                  "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                }}
+              />
+              <TextField
+                name="cognome"
+                label="Cognome"
+                //value={}
+                //onChange={handleChange}
+                required
+                fullWidth
+                sx={{
+                  flex: 1,
+                  "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                }}
+              />
+            </Box>
+          </Box>
+          <Divider />
+          <Box
+            key="form_accesso"
+            display="flex"
+            flexDirection="column"
+            gap={2}
+            m={2}
+          >
+            <Typography variant="subtitle1">Accesso</Typography>
+            <Box
+              display="flex"
+              flexDirection={{ xs: "column", sm: "row" }}
+              gap={2}
+            >
+              <TextField
+                name="email"
+                label="Email"
+                type="email"
+                value={form.email}
+                onChange={handleChange}
+                required
+                fullWidth
+                sx={{
+                  flex: 1,
+                  "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                }}
+              />
+              <TextField
+                name="password"
+                label="Password"
+                type="password"
+                value={form.password}
+                onChange={handleChange}
+                required
+                fullWidth
+                sx={{
+                  flex: 1,
+                  "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                }}
+              />
+            </Box>
+          </Box>
+
+          <Divider />
+
+          <Box
+            m={2}
+            key="form_ruolo"
+            display="flex"
+            flexDirection="column"
+            gap={2}
+          >
+            <Typography variant="subtitle1">Ruolo</Typography>
+            <Box
+              display="flex"
+              flexDirection={{ xs: "column", sm: "row" }}
+              width={{ xs: "100%", sm: "50%" }}
+              gap={2}
+            >
+              {!isAgent && (
+                <TextField
+                  name="role"
+                  label="Ruolo"
+                  select
+                  value={form.role}
+                  onChange={handleChange}
+                  required
+                  fullWidth
+                  sx={{
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                  }}
+                >
+                  <MenuItem value="admin">Admin</MenuItem>
+                  <MenuItem value="agent">Agent</MenuItem>
+                  <MenuItem value="client">Client</MenuItem>
+                </TextField>
+              )}
+            </Box>
+          </Box>
+          <Divider />
         </Box>
-        <Box display="flex" justifyContent="flex-end" gap={2}>
+        <Divider />
+        <Box display="flex" p={2} justifyContent="flex-end" gap={2}>
           <Button variant="outlined" color="primary" onClick={handleCancel}>
             Annulla
           </Button>

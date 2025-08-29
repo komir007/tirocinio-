@@ -306,76 +306,7 @@ export function GridCustomizationDialog({
           </Box>
         )}
 
-        {/* Tab Ordinamento */}
-        {activeTab === 1 && (
-          <Box>
-            <Typography variant="subtitle2" gutterBottom>
-              Configurazione ordinamento predefinito
-            </Typography>
-            
-            <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-              <FormControl sx={{ minWidth: 200 }}>
-                <InputLabel>Campo</InputLabel>
-                <Select
-                  value={tempConfig.sortBy || ''}
-                  onChange={(e) => setTempConfig({
-                    ...tempConfig,
-                    sortBy: e.target.value
-                  })}
-                >
-                  <MenuItem value="">Nessuno</MenuItem>
-                  {columns.map(column => (
-                    <MenuItem key={column.id} value={column.id}>
-                      {column.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              
-              <FormControl sx={{ minWidth: 150 }}>
-                <InputLabel>Direzione</InputLabel>
-                <Select
-                  value={tempConfig.sortOrder || 'asc'}
-                  onChange={(e) => setTempConfig({
-                    ...tempConfig,
-                    sortOrder: e.target.value as 'asc' | 'desc'
-                  })}
-                >
-                  <MenuItem value="asc">Crescente</MenuItem>
-                  <MenuItem value="desc">Decrescente</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-          </Box>
-        )}
-
-        {/* Tab Paginazione */}
-        {activeTab === 2 && (
-          <Box>
-            <Typography variant="subtitle2" gutterBottom>
-              Configurazione paginazione
-            </Typography>
-            
-            <Box sx={{ mt: 2 }}>
-              <FormControl sx={{ minWidth: 200, mb: 2 }}>
-                <InputLabel>Righe per pagina</InputLabel>
-                <Select
-                  value={tempConfig.pageSize || 10}
-                  onChange={(e) => setTempConfig({
-                    ...tempConfig,
-                    pageSize: Number(e.target.value)
-                  })}
-                >
-                  <MenuItem value={5}>5</MenuItem>
-                  <MenuItem value={10}>10</MenuItem>
-                  <MenuItem value={25}>25</MenuItem>
-                  <MenuItem value={50}>50</MenuItem>
-                  <MenuItem value={100}>100</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-          </Box>
-        )}
+       
       </DialogContent>
       
       <DialogActions>

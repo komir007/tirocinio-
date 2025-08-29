@@ -246,7 +246,7 @@ export default function ResponsiveDrawer(props: Props) {
   );
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: "flex", backgroundColor: "grey.100"}}>
       <AppBar
         elevation={1}
         position="fixed"

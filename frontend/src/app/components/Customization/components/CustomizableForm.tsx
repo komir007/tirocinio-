@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from "react";
 import {
   Box,
   Paper,
@@ -15,10 +15,14 @@ import {
   AccordionSummary,
   AccordionDetails,
   IconButton,
-} from '@mui/material';
-import { ExpandMore, Settings as SettingsIcon } from '@mui/icons-material';
-import { FormSection, FormCustomization, FormField } from '../types/customization.types';
-import { FormCustomizationDialog } from './FormCustomizationDialog';
+} from "@mui/material";
+import { ExpandMore, Settings as SettingsIcon } from "@mui/icons-material";
+import {
+  FormSection,
+  FormCustomization,
+  FormField,
+} from "../types/customization.types";
+import { FormCustomizationDialog } from "./FormCustomizationDialog";
 
 interface CustomizableFormProps {
   formId: string;
@@ -38,8 +42,8 @@ export function CustomizableForm({
   onCustomizationChange,
   onSubmit,
   initialValues = {},
-  submitLabel = 'Salva',
-  loading = false
+  submitLabel = "Salva",
+  loading = false,
 }: CustomizableFormProps) {
   const [customizationOpen, setCustomizationOpen] = useState(false);
   const [formData, setFormData] = useState<Record<string, any>>(initialValues);
@@ -48,12 +52,14 @@ export function CustomizableForm({
   // Applica customizzazioni alle sezioni
   const processedSections = useMemo(() => {
     let sections = [...defaultSections];
-    
+
     // Applica customizzazioni sezioni
     if (customization.sections) {
       sections = sections
-        .map(section => {
-          const customSection = customization.sections?.find(cs => cs.id === section.id);
+        .map((section) => {
+          const customSection = customization.sections?.find(
+            (cs) => cs.id === section.id
+          );
           return {
             ...section,
             order: customSection?.order ?? section.defaultOrder ?? 0,
@@ -62,17 +68,19 @@ export function CustomizableForm({
             collapsed: customSection?.collapsed ?? false,
           };
         })
-        .filter(section => !section.hidden)
+        .filter((section) => !section.hidden)
         .sort((a, b) => (a.order || 0) - (b.order || 0));
     }
-    
+
     // Applica customizzazioni campi
     if (customization.fields) {
-      sections = sections.map(section => ({
+      sections = sections.map((section) => ({
         ...section,
         fields: section.fields
-          .map(field => {
-            const customField = customization.fields?.find(cf => cf.id === field.id);
+          .map((field) => {
+            const customField = customization.fields?.find(
+              (cf) => cf.id === field.id
+            );
             return {
               ...field,
               order: customField?.order ?? field.defaultOrder ?? 0,
@@ -81,20 +89,20 @@ export function CustomizableForm({
               required: customField?.required ?? field.required ?? false,
             };
           })
-          .filter(field => !field.hidden)
+          .filter((field) => !field.hidden)
           .sort((a, b) => (a.order || 0) - (b.order || 0)),
       }));
     }
-    
+
     return sections;
   }, [defaultSections, customization]);
 
   const handleFieldChange = (fieldId: string, value: any) => {
-    setFormData(prev => ({ ...prev, [fieldId]: value }));
-    
+    setFormData((prev) => ({ ...prev, [fieldId]: value }));
+
     // Rimuovi errore se presente
     if (errors[fieldId]) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[fieldId];
         return newErrors;
@@ -104,36 +112,43 @@ export function CustomizableForm({
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-    
-    processedSections.forEach(section => {
-      section.fields.forEach(field => {
+
+    processedSections.forEach((section) => {
+      section.fields.forEach((field) => {
         const value = formData[field.id];
-        
+
         // Validazione required
-        if (field.required && (!value || (typeof value === 'string' && value.trim() === ''))) {
+        if (
+          field.required &&
+          (!value || (typeof value === "string" && value.trim() === ""))
+        ) {
           newErrors[field.id] = `${field.label} è richiesto`;
           return;
         }
-        
+
         // Validazioni personalizzate
         if (value && field.validation) {
           const { min, max, pattern, message } = field.validation;
-          
+
           if (min && value.length < min) {
-            newErrors[field.id] = message || `${field.label} deve essere di almeno ${min} caratteri`;
+            newErrors[field.id] =
+              message ||
+              `${field.label} deve essere di almeno ${min} caratteri`;
           }
-          
+
           if (max && value.length > max) {
-            newErrors[field.id] = message || `${field.label} deve essere di massimo ${max} caratteri`;
+            newErrors[field.id] =
+              message ||
+              `${field.label} deve essere di massimo ${max} caratteri`;
           }
-          
+
           if (pattern && !new RegExp(pattern).test(value)) {
             newErrors[field.id] = message || `${field.label} non è valido`;
           }
         }
       });
     });
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -147,12 +162,12 @@ export function CustomizableForm({
 
   const renderField = (field: FormField, sectionReadOnly: boolean) => {
     const isReadOnly = sectionReadOnly || field.readOnly;
-    const fieldValue = formData[field.id] || '';
+    const fieldValue = formData[field.id] || "";
     const fieldError = errors[field.id];
 
     const commonProps = {
       fullWidth: true,
-      margin: 'normal' as const,
+      margin: "normal" as const,
       value: fieldValue,
       error: !!fieldError,
       helperText: fieldError,
@@ -160,9 +175,9 @@ export function CustomizableForm({
     };
 
     switch (field.type) {
-      case 'text':
-      case 'email':
-      case 'password':
+      case "text":
+      case "email":
+      case "password":
         return (
           <TextField
             key={field.id}
@@ -175,7 +190,7 @@ export function CustomizableForm({
           />
         );
 
-      case 'number':
+      case "number":
         return (
           <TextField
             key={field.id}
@@ -183,12 +198,14 @@ export function CustomizableForm({
             type="number"
             required={field.required}
             placeholder={field.placeholder}
-            onChange={(e) => handleFieldChange(field.id, parseFloat(e.target.value) || 0)}
+            onChange={(e) =>
+              handleFieldChange(field.id, parseFloat(e.target.value) || 0)
+            }
             {...commonProps}
           />
         );
 
-      case 'textarea':
+      case "textarea":
         return (
           <TextField
             key={field.id}
@@ -202,7 +219,7 @@ export function CustomizableForm({
           />
         );
 
-      case 'select':
+      case "select":
         return (
           <FormControl key={field.id} {...commonProps}>
             <InputLabel>{field.label}</InputLabel>
@@ -211,7 +228,7 @@ export function CustomizableForm({
               onChange={(e) => handleFieldChange(field.id, e.target.value)}
               label={field.label}
             >
-              {field.options?.map(option => (
+              {field.options?.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
                   {option.label}
                 </MenuItem>
@@ -220,7 +237,7 @@ export function CustomizableForm({
           </FormControl>
         );
 
-      case 'checkbox':
+      case "checkbox":
         return (
           <FormControlLabel
             key={field.id}
@@ -235,7 +252,7 @@ export function CustomizableForm({
           />
         );
 
-      case 'date':
+      case "date":
         return (
           <TextField
             key={field.id}
@@ -253,82 +270,96 @@ export function CustomizableForm({
     }
   };
 
-
-
   return (
-    <Paper elevation={1} sx={{ p: 3 }}>
-      {/* Header con customizzazione */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6">
-          {formId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-        </Typography>
-        <IconButton
-          onClick={() => setCustomizationOpen(true)}
-          size="small"
-          title="Personalizza form"
+    <Box height="100%" width="100%">
+      <Paper elevation={5} sx={{ p: 3 }}>
+        {/* Header con customizzazione */}
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={2}
         >
-          <SettingsIcon />
-        </IconButton>
-      </Box>
-
-      {/* Form */}
-      <Box component="form" onSubmit={handleSubmit}>
-        {processedSections.map(section => (
-          <Accordion key={section.id} defaultExpanded={!section.collapsed}>
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography variant="h6">{section.label}</Typography>
-              {section.description && (
-                <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-                  {section.description}
-                </Typography>
-              )}
-            </AccordionSummary>
-            <AccordionDetails>
-              <Box 
-                display="flex" 
-                flexDirection={customization.layout === 'horizontal' ? 'row' : 'column'}
-                flexWrap="wrap"
-                gap={2}
-              >
-                {section.fields.map(field => (
-                  <Box 
-                    key={field.id}
-                    flex={
-                      customization.layout === 'horizontal' ? '1 1 300px' :
-                      customization.layout === 'grid' ? '1 1 250px' : '1'
-                    }
-                    minWidth={
-                      customization.layout === 'grid' ? '250px' : 'auto'
-                    }
-                  >
-                    {renderField(field, section.readOnly || false)}
-                  </Box>
-                ))}
-              </Box>
-            </AccordionDetails>
-          </Accordion>
-        ))}
-
-        {/* Submit Button */}
-        <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
-          <Button type="submit" variant="contained" disabled={loading}>
-            {loading ? 'Salvataggio...' : submitLabel}
-          </Button>
+          <Typography variant="h6">
+            {formId.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+          </Typography>
+          <IconButton
+            onClick={() => setCustomizationOpen(true)}
+            size="small"
+            title="Personalizza form"
+          >
+            <SettingsIcon />
+          </IconButton>
         </Box>
-      </Box>
 
-      {/* Dialog customizzazione */}
-      <FormCustomizationDialog
-        open={customizationOpen}
-        onClose={() => setCustomizationOpen(false)}
-        formId={formId}
-        sections={defaultSections}
-        currentConfig={customization}
-        onSave={(config) => {
-          onCustomizationChange?.(config);
-          setCustomizationOpen(false);
-        }}
-      />
-    </Paper>
+        {/* Form */}
+        <Box component="form" onSubmit={handleSubmit}>
+          {processedSections.map((section) => (
+            <Accordion key={section.id} defaultExpanded={!section.collapsed}>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Typography variant="h6">{section.label}</Typography>
+                {section.description && (
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ ml: 2 }}
+                  >
+                    {section.description}
+                  </Typography>
+                )}
+              </AccordionSummary>
+              <AccordionDetails>
+                <Box
+                  display="flex"
+                  flexDirection={
+                    customization.layout === "horizontal" ? "row" : "column"
+                  }
+                  flexWrap="wrap"
+                  gap={2}
+                >
+                  {section.fields.map((field) => (
+                    <Box
+                      key={field.id}
+                      flex={
+                        customization.layout === "horizontal"
+                          ? "1 1 300px"
+                          : customization.layout === "grid"
+                          ? "1 1 250px"
+                          : "1"
+                      }
+                      minWidth={
+                        customization.layout === "grid" ? "250px" : "auto"
+                      }
+                    >
+                      {renderField(field, section.readOnly || false)}
+                    </Box>
+                  ))}
+                </Box>
+              </AccordionDetails>
+            </Accordion>
+          ))}
+
+          {/* Submit Button */}
+          <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
+            <Button type="submit" variant="contained" disabled={loading}>
+              {loading ? "Salvataggio..." : submitLabel}
+            </Button>
+          </Box>
+        </Box>
+
+        {/* Dialog customizzazione */}
+        <FormCustomizationDialog
+          open={customizationOpen}
+          onClose={() => setCustomizationOpen(false)}
+          formId={formId}
+          sections={defaultSections}
+          currentConfig={customization}
+          onSave={(config) => {
+            onCustomizationChange?.(config);
+            setCustomizationOpen(false);
+          }}
+        />
+      </Paper>
+    </Box>
   );
 }

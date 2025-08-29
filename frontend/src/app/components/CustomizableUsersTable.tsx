@@ -5,7 +5,7 @@ import { AuthContext } from "./Authcontext";
 import { useDebounce } from "./hooks/useDebounce";
 import { CustomizableGrid } from "./Customization/components/CustomizableGrid";
 import { useUserCustomization } from "./Customization/hooks/useUsercustomization";
-import { DEFAULT_GRID_CONFIGS } from "./Customization/config/forms/defaultGridConfigs";
+import { DEFAULT_GRID_CONFIGS } from "./Customization/config/defaultGridConfigs"; // CORRETTO: rimosso /forms/
 import { GridColumn } from "./Customization/types/customization.types";
 import {
   Box,
@@ -17,11 +17,13 @@ import {
   Avatar,
   Snackbar,
   Alert,
+  Paper,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
+import { Settings as SettingsIcon } from '@mui/icons-material/Settings';
 
 interface UserRow {
   id: string | number;
@@ -71,13 +73,36 @@ const UserRowActions = memo(({
 
   return (
     <>
-      <IconButton onClick={handleMenuOpen} size="small">
+      <IconButton
+        onClick={handleMenuOpen}
+        size="small"
+        sx={{
+          border: "1px solid rgba(0,0,0,0.12)",
+          borderRadius: 2,
+          p: 0.5,
+        }}
+      >
         <MoreVertIcon />
       </IconButton>
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
+        sx={{
+          "& .MuiPaper-root": {
+            borderRadius: 2,
+            p: 1,
+            minWidth: 180,
+          },
+        }}
+        transformOrigin={{
+          horizontal: "right",
+          vertical: "top",
+        }}
+        anchorOrigin={{
+          horizontal: "right",
+          vertical: "bottom",
+        }}
       >
         <MenuItem onClick={handleEdit}>
           <EditIcon fontSize="small" sx={{ mr: 1 }} />
@@ -116,10 +141,15 @@ export default function CustomizableUsersTable() {
 
   // Configurazione colonne
   const gridColumns = useMemo(() => {
-    const baseColumns = DEFAULT_GRID_CONFIGS['users-table'].columns;
+    const baseColumns = DEFAULT_GRID_CONFIGS['users-table']?.columns || []; // CORRETTO: gestione null/undefined
+    
+    // Filtra le colonne per gli agenti (rimuovi role)
+    const filteredColumns = isAgent 
+      ? baseColumns.filter(column => column.id !== 'role')
+      : baseColumns;
     
     // Aggiungi render personalizzati
-    return baseColumns.map(column => ({
+    return filteredColumns.map(column => ({
       ...column,
       render: (value: any, row: UserRow) => {
         switch (column.id) {
@@ -127,19 +157,19 @@ export default function CustomizableUsersTable() {
             return (
               <Box display="flex" alignItems="center">
                 <Avatar sx={{ width: 36, height: 36, mr: 1 }}>
-                  {row.name.slice(0, 2).toUpperCase()}
+                  {row.name?.slice(0, 2).toUpperCase() || '??'} {/* CORRETTO: gestione caso name undefined */}
                 </Avatar>
-                {value}
+                {value || ''} {/* CORRETTO: gestione caso value undefined */}
               </Box>
             );
           case 'data_di_creazione':
             return formatDateOnly(value);
           default:
-            return value;
+            return value || ''; // CORRETTO: gestione caso value undefined
         }
       }
     }));
-  }, []);
+  }, [isAgent]);
 
   // Carica utenti
   const loadUsers = useCallback(async () => {
@@ -154,7 +184,7 @@ export default function CustomizableUsersTable() {
       if (!res.ok) throw new Error('Errore nel caricamento utenti');
       
       const data = await res.json();
-      setUsers(data);
+      setUsers(Array.isArray(data) ? data : []); // CORRETTO: assicurati che data sia un array
     } catch (error) {
       console.error('Errore:', error);
       setSnackbar({
@@ -177,15 +207,22 @@ export default function CustomizableUsersTable() {
     
     const term = debouncedSearchTerm.toLowerCase();
     return users.filter(user =>
-      user.name.toLowerCase().includes(term) ||
-      user.email.toLowerCase().includes(term) ||
-      user.role.toLowerCase().includes(term)
+      user.name?.toLowerCase().includes(term) ||
+      user.email?.toLowerCase().includes(term) ||
+      user.role?.toLowerCase().includes(term) // CORRETTO: gestione campi undefined
     );
   }, [users, debouncedSearchTerm]);
 
   // Handlers
   const handleEditUser = useCallback((user: UserRow) => {
-    router.push(`/user/edit_user?email=${encodeURIComponent(user.email)}`);
+    const params = new URLSearchParams({
+      id: String(user.id),
+      name: user.name || '',
+      role: user.role || '',
+      email: user.email || '',
+      data_di_creazione: user.data_di_creazione || '',
+    }).toString();
+    router.push(`/user/edit_user?page=edit&${params}`);
   }, [router]);
 
   const handleDeleteUser = useCallback(async (user: UserRow) => {
@@ -196,11 +233,12 @@ export default function CustomizableUsersTable() {
     try {
       const token = localStorage.getItem('accessToken');
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'}/users/${user.email}`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'}/users/${user.id}`,
         {
           method: 'DELETE',
           headers: {
             ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            'Content-Type': 'application/json',
           },
         }
       );
@@ -229,7 +267,11 @@ export default function CustomizableUsersTable() {
     router.push('/user/registration');
   }, [router]);
 
-  // Render azioni per ogni riga
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchTerm(value);
+  }, []);
+
+  // Render azioni per ogni riga (memoized con dipendenze corrette)
   const renderActions = useCallback((row: UserRow) => (
     <UserRowActions
       user={row}
@@ -239,47 +281,70 @@ export default function CustomizableUsersTable() {
   ), [handleEditUser, handleDeleteUser]);
 
   if (customizationLoading) {
-    return <div>Caricamento configurazione...</div>;
+    return (
+      <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 4 }}>
+        Caricamento configurazione...
+      </Paper>
+    );
   }
 
   return (
-    <Box sx={{ width: '100%', p: 2 }}>
-      {/* Header con ricerca e pulsante aggiungi */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <TextField
-          placeholder="Cerca utenti..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          size="small"
-          sx={{ minWidth: 300 }}
-        />
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAddUser}
-        >
-          Nuovo Utente
-        </Button>
-      </Box>
+    <Box sx={{ width: '100%' }}>
+      <Paper sx={{ maxWidth: "100vw", pt: 2, px: 1, borderRadius: 4 }}>
+        {/* Header con ricerca, pulsante aggiungi e settings */}
+        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2} px={1}>
+          <Box display="flex" alignItems="center" flex={1}>
+            <TextField
+              label="Cerca utente"
+              variant="outlined"
+              size="small"
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              sx={{
+                flex: 1,
+                mr: 2,
+                maxWidth: "100%",
+                "& .MuiOutlinedInput-root": { borderRadius: 2 },
+              }}
+            />
+            <Button
 
-      {/* Griglia customizzabile */}
-      <CustomizableGrid
-        gridId="users-table"
-        columns={gridColumns}
-        data={filteredData}
-        customization={getUsersGridConfig() || undefined}
-        onCustomizationChange={updateUsersGridCustomization}
-        loading={loading}
-        actions={renderActions}
-      />
+              variant="contained"
+              color="primary"
+              onClick={handleAddUser}
+              sx={{ borderRadius: 2, mr: 1 }}
+              startIcon={<AddIcon />}
+            >
+              Aggiungi utente
+            </Button>
+          </Box>
+        </Box>
+
+        {/* Griglia customizzabile */}
+        <CustomizableGrid
+          gridId="users-table"
+          columns={gridColumns}
+          data={filteredData}
+          customization={getUsersGridConfig() || {}} // CORRETTO: gestione null
+          onCustomizationChange={updateUsersGridCustomization}
+          loading={loading}
+          actions={renderActions}
+          // hideHeader={false} // RIMOSSO: non necessario se default è false
+        />
+      </Paper>
 
       {/* Snackbar per notifiche */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
         onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}>
+        <Alert 
+          severity={snackbar.severity} 
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          sx={{ width: "100%" }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>

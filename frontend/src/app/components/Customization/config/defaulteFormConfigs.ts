@@ -24,11 +24,24 @@ export const DEFAULT_FORM_CONFIGS = {
             }
           },
           {
+            id: 'cognome',
+            label: 'Cognome',
+            type: 'text' as const,
+            required: true,
+            defaultOrder: 2,
+            section: 'personal-info',
+            validation: {
+              min: 2,
+              max: 50,
+              message: 'Il nome deve essere tra 2 e 50 caratteri'
+            }
+          },
+          {
             id: 'email',
             label: 'Email',
             type: 'email' as const,
             required: true,
-            defaultOrder: 2,
+            defaultOrder: 3,
             section: 'personal-info',
             validation: {
               pattern: '^[^@]+@[^@]+\.[^@]+$',

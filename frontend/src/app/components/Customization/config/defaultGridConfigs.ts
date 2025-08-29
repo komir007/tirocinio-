@@ -28,7 +28,7 @@ export const DEFAULT_GRID_CONFIGS = {
         filterable: true,
       },
       {
-        id: 'createdAt',
+        id: 'createdAt', // Cambiato da 'createdAt' a 'data_di_creazione'
         label: 'Data Creazione',
         minWidth: 180,
         defaultOrder: 4,

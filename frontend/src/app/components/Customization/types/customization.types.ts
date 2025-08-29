@@ -3,6 +3,7 @@ export interface GridColumn {
   label: string;
   minWidth?: number;
   maxWidth?: number;
+  width?: number;
   align?: 'left' | 'center' | 'right';
   sortable?: boolean;
   filterable?: boolean;

@@ -38,9 +38,10 @@ export default function CustomizableRegistrationPage() {
           </Button>
         </Box>
       </Box>
+      <Box height="74vh" width="100%">
+        <CustomizableRegistration />
+      </Box>
 
-      <CustomizableRegistration />
-      
       {/* Guida rapida */}
       <CustomizationHelp variant="form" />
     </Box>
