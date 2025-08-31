@@ -4,8 +4,11 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { UserSettingsModule } from './user-settings/user-settings.module';
 import { ConfigModule } from '@nestjs/config';
 import { JwtStrategy } from './auth/jwt.strategy';
+import { User } from './user/user.entity';
+import { UserSettings } from './user-settings/user-settings.entity';
 
 
 
@@ -19,11 +22,13 @@ import { JwtStrategy } from './auth/jwt.strategy';
       username: 'devuser',
       password: 'devpass',
       database: 'miodb',
+      entities: [User, UserSettings],
       autoLoadEntities: true,
       synchronize: true, // ❗ solo in sviluppo
     }),
       UsersModule,
       AuthModule,
+      UserSettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService,

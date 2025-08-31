@@ -36,6 +36,7 @@ export interface FormField {
   readOnly?: boolean;
   hidden?: boolean;
   order?: number;
+  adminLocked?: boolean; // Nuovo: se true, solo gli admin possono modificare questo campo
   options?: Array<{ value: string; label: string }>;
   validation?: {
     min?: number;
@@ -55,6 +56,7 @@ export interface FormSection {
   hidden?: boolean;
   collapsed?: boolean;
   order?: number;
+  adminLocked?: boolean; // Nuovo: se true, solo gli admin possono modificare questa sezione
   fields: FormField[];
 }
 
@@ -65,6 +67,7 @@ export interface FormCustomization {
     hidden?: boolean;
     readOnly?: boolean;
     collapsed?: boolean;
+    adminLocked?: boolean; // Se true, solo gli admin possono modificare questa sezione
   }>;
   fields?: Array<{
     id: string;
@@ -72,8 +75,10 @@ export interface FormCustomization {
     hidden?: boolean;
     readOnly?: boolean;
     required?: boolean;
+    adminLocked?: boolean; // Se true, solo gli admin possono modificare questo campo
   }>;
   layout?: 'vertical' | 'horizontal' | 'grid';
+  compactMode?: boolean; // Nuovo: modalità compatta per l'interfaccia
 }
 
 export interface CustomizationConfig {
@@ -88,16 +93,26 @@ export interface CustomizationConfig {
     language?: string;
     dateFormat?: string;
     timeFormat?: string;
+    compactInterface?: boolean; // Modalità interfaccia compatta globale
+  };
+  adminRestrictions?: {
+    [entityId: string]: {
+      lockedFields?: string[];
+      lockedSections?: string[];
+    };
   };
 }
 
 export interface CustomizationContextType {
   config: CustomizationConfig | null;
   loading: boolean;
+  error?: string | null;
   updateGridCustomization: (gridId: string, config: GridCustomization) => void;
   updateFormCustomization: (formId: string, config: FormCustomization) => void;
   updateGlobalCustomization: (config: CustomizationConfig['global']) => void;
   resetCustomization: (scope?: 'all' | 'grids' | 'forms' | 'global') => void;
   exportCustomizations: () => string;
   importCustomizations: (configJson: string) => boolean;
+  updateAdminFieldRestrictions?: (targetUserId: number, restrictions: any) => Promise<any>;
+  refreshConfig?: () => Promise<void>;
 }

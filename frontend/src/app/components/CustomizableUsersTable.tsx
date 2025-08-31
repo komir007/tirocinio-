@@ -23,7 +23,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
-import { Settings as SettingsIcon } from '@mui/icons-material/Settings';
+
 
 interface UserRow {
   id: string | number;

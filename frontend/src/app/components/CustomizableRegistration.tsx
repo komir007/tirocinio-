@@ -2,26 +2,40 @@
 import React, { useContext, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthContext } from "./Authcontext";
-import { CustomizableForm } from "./Customization/components/CustomizableForm";
-import { useUserCustomization } from "./Customization/hooks/useUsercustomization";
+import { CompactCustomizableForm } from "./Customization/components/CompactCustomizableForm";
+import { AdminFieldRestrictions } from "./Customization/components/AdminFieldRestrictions";
+import { useCustomizationContext } from "./Customization/components/CustomizableProvider";
 import { DEFAULT_FORM_CONFIGS } from "./Customization/config/defaulteFormConfigs";
-import { Paper, Box, Typography, Button, Snackbar, Alert } from "@mui/material";
+import { 
+  Paper, 
+  Box, 
+  Typography, 
+  Button, 
+  Snackbar, 
+  Alert, 
+  IconButton,
+  Tooltip,
+  Fab
+} from "@mui/material";
+import { AdminPanelSettings } from "@mui/icons-material";
 
 export default function CustomizableRegistration() {
   const authContext = useContext(AuthContext);
   const router = useRouter();
   const by = authContext?.user?.email;
   const isAgent = authContext?.user?.role?.toLowerCase() === "agent";
+  const isAdmin = authContext?.user?.role?.toLowerCase() === "admin";
 
   // Customization hooks
   const {
-    getUserRegistrationFormConfig,
-    updateUserRegistrationFormCustomization,
+    config,
     loading: customizationLoading,
-  } = useUserCustomization();
+    updateFormCustomization,
+  } = useCustomizationContext();
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
 
   const handleSubmit = async (formData: Record<string, any>) => {
     setLoading(true);
@@ -76,7 +90,7 @@ export default function CustomizableRegistration() {
       if (isAgent && section.id === "permissions") {
         return {
           ...section,
-          fields: section.fields.map((field) =>
+          fields: section.fields.map((field: any) =>
             field.id === "role"
               ? { ...field, readOnly: true, hidden: false }
               : field
@@ -108,36 +122,35 @@ export default function CustomizableRegistration() {
       width="100%"
       maxHeight="74vh"
       overflow="auto"
+      position="relative"
     >
-      
-   
+      {/* Form customizzabile compatto */}
+      <CompactCustomizableForm
+        formId="user-registration"
+        sections={formSections}
+        customization={config?.forms?.["user-registration"] || undefined}
+        onCustomizationChange={(formConfig) => updateFormCustomization("user-registration", formConfig)}
+        onSubmit={handleSubmit}
+        submitLabel={loading ? "Registrazione..." : "Registra Utente"}
+        loading={loading}
+        initialValues={{
+          role: isAgent ? "client" : "",
+          createdBy: by || "",
+        }}
+      />
 
-        {/* Form customizzabile */}
-        <CustomizableForm
-          formId="user-registration"
-          sections={formSections}
-          customization={getUserRegistrationFormConfig() || undefined}
-          onCustomizationChange={updateUserRegistrationFormCustomization}
-          onSubmit={handleSubmit}
-          submitLabel={loading ? "Registrazione..." : "Registra Utente"}
-          loading={loading}
-          initialValues={{
-            role: isAgent ? "client" : "",
-            createdBy: by || "",
-          }}
-        />
-
-        {/* Snackbar */}
-        <Snackbar
-          open={snackbarOpen}
-          autoHideDuration={3000}
-          onClose={() => setSnackbarOpen(false)}
-        >
-          <Alert severity="success" onClose={() => setSnackbarOpen(false)}>
-            Utente registrato con successo!
-          </Alert>
-        </Snackbar>
       
+
+      {/* Snackbar */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+      >
+        <Alert severity="success" onClose={() => setSnackbarOpen(false)}>
+          Utente registrato con successo!
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

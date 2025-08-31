@@ -17,10 +17,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <AuthProvider>
-            <CustomizationProvider>
               {/* Ora il drawer gestisce il main e i margini dinamici */}
-              <ResponsiveDrawer>{children}</ResponsiveDrawer>
-            </CustomizationProvider>
+              <ResponsiveDrawer>
+                <CustomizationProvider>
+                  {children}
+                </CustomizationProvider>
+              </ResponsiveDrawer>
           </AuthProvider>
         </ThemeProvider>
       </body>

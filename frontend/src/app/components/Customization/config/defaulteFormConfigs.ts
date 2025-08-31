@@ -1,4 +1,4 @@
-import { FormSection } from '../../types/customization.types';
+import { FormSection } from '../types/customization.types';
 
 export const DEFAULT_FORM_CONFIGS = {
   'user-registration': {
@@ -27,7 +27,7 @@ export const DEFAULT_FORM_CONFIGS = {
             id: 'cognome',
             label: 'Cognome',
             type: 'text' as const,
-            required: true,
+            required: false,
             defaultOrder: 2,
             section: 'personal-info',
             validation: {

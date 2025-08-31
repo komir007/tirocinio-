@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useContext } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Box,
   Paper,
@@ -11,13 +11,20 @@ import {
   MenuItem,
   FormControlLabel,
   Checkbox,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  Collapse,
   IconButton,
+  Chip,
   Tooltip,
 } from "@mui/material";
-import { ExpandMore, Settings as SettingsIcon, Lock } from "@mui/icons-material";
+import {
+  ExpandLess,
+  ExpandMore,
+  Settings as SettingsIcon,
+  Visibility,
+  VisibilityOff,
+  Lock,
+  LockOpen,
+} from "@mui/icons-material";
 import {
   FormSection,
   FormCustomization,
@@ -25,8 +32,9 @@ import {
 } from "../types/customization.types";
 import { UnifiedCustomizationDialog } from "./UnifiedCustomizationDialog";
 import { AuthContext } from "../../Authcontext";
+import { useContext } from "react";
 
-interface CustomizableFormProps {
+interface CompactCustomizableFormProps {
   formId: string;
   sections: FormSection[];
   customization?: FormCustomization;
@@ -37,7 +45,7 @@ interface CustomizableFormProps {
   loading?: boolean;
 }
 
-export function CustomizableForm({
+export function CompactCustomizableForm({
   formId,
   sections: defaultSections,
   customization = {},
@@ -46,7 +54,7 @@ export function CustomizableForm({
   initialValues = {},
   submitLabel = "Salva",
   loading = false,
-}: CustomizableFormProps) {
+}: CompactCustomizableFormProps) {
   const authContext = useContext(AuthContext);
   const userRole = authContext?.user?.role;
   const isAdmin = userRole === 'admin';
@@ -54,6 +62,8 @@ export function CustomizableForm({
   const [customizationOpen, setCustomizationOpen] = useState(false);
   const [formData, setFormData] = useState<Record<string, any>>(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [compactMode, setCompactMode] = useState(customization.compactMode ?? true);
 
   // Applica customizzazioni alle sezioni
   const processedSections = useMemo(() => {
@@ -108,7 +118,6 @@ export function CustomizableForm({
   const handleFieldChange = (fieldId: string, value: any) => {
     setFormData((prev) => ({ ...prev, [fieldId]: value }));
 
-    // Rimuovi errore se presente
     if (errors[fieldId]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -125,7 +134,6 @@ export function CustomizableForm({
       section.fields.forEach((field) => {
         const value = formData[field.id];
 
-        // Validazione required
         if (
           field.required &&
           (!value || (typeof value === "string" && value.trim() === ""))
@@ -134,7 +142,6 @@ export function CustomizableForm({
           return;
         }
 
-        // Validazioni personalizzate
         if (value && field.validation) {
           const { min, max, pattern, message } = field.validation;
 
@@ -168,18 +175,31 @@ export function CustomizableForm({
     }
   };
 
-  const renderField = (field: FormField, sectionReadOnly: boolean) => {
+  const toggleSectionCollapse = (sectionId: string) => {
+    setCollapsedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
+
+  const renderCompactField = (field: FormField, sectionReadOnly: boolean) => {
     const isReadOnly = sectionReadOnly || field.readOnly || (!isAdmin && field.adminLocked);
     const fieldValue = formData[field.id] || "";
     const fieldError = errors[field.id];
 
     const commonProps = {
+      size: "small" as const,
       fullWidth: true,
-      margin: "normal" as const,
       value: fieldValue,
       error: !!fieldError,
       helperText: fieldError,
       disabled: isReadOnly || loading,
+      variant: "outlined" as const,
     };
 
     const fieldComponent = (() => {
@@ -217,7 +237,7 @@ export function CustomizableForm({
             <TextField
               label={field.label}
               multiline
-              rows={4}
+              rows={2}
               required={field.required}
               placeholder={field.placeholder}
               onChange={(e) => handleFieldChange(field.id, e.target.value)}
@@ -228,11 +248,12 @@ export function CustomizableForm({
         case "select":
           return (
             <FormControl {...commonProps}>
-              <InputLabel>{field.label}</InputLabel>
+              <InputLabel size="small">{field.label}</InputLabel>
               <Select
                 value={fieldValue}
                 onChange={(e) => handleFieldChange(field.id, e.target.value)}
                 label={field.label}
+                size="small"
               >
                 {field.options?.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
@@ -248,6 +269,7 @@ export function CustomizableForm({
             <FormControlLabel
               control={
                 <Checkbox
+                  size="small"
                   checked={!!fieldValue}
                   onChange={(e) => handleFieldChange(field.id, e.target.checked)}
                   disabled={isReadOnly || loading}
@@ -277,103 +299,129 @@ export function CustomizableForm({
     return (
       <Box key={field.id} position="relative">
         {fieldComponent}
-        {/* Indicatore di campo bloccato dall'admin */}
-        {field.adminLocked && !isAdmin && (
-          <Tooltip title="Campo bloccato dall'amministratore">
-            <Lock
-              sx={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                fontSize: 16,
-                color: 'warning.main'
-              }}
-            />
-          </Tooltip>
-        )}
+        {/* Indicatori di stato del campo */}
+        <Box position="absolute" top={0} right={0} display="flex" gap={0.5}>
+          {field.adminLocked && (
+            <Tooltip title="Campo bloccato dall'amministratore">
+              <Lock fontSize="small" color="warning" />
+            </Tooltip>
+          )}
+          {isReadOnly && !field.adminLocked && (
+            <Tooltip title="Campo di sola lettura">
+              <VisibilityOff fontSize="small" color="disabled" />
+            </Tooltip>
+          )}
+        </Box>
       </Box>
     );
   };
 
   return (
     <Box height="100%" width="100%">
-      <Paper elevation={5} sx={{ p: 3 }}>
-        {/* Header con customizzazione */}
+      <Paper 
+        elevation={compactMode ? 1 : 3} 
+        sx={{ 
+          p: compactMode ? 2 : 3,
+          maxHeight: compactMode ? '70vh' : 'none',
+          overflow: compactMode ? 'auto' : 'visible'
+        }}
+      >
+        {/* Header compatto */}
         <Box
           display="flex"
           justifyContent="space-between"
           alignItems="center"
-          mb={2}
+          mb={compactMode ? 1 : 2}
         >
-          <Typography variant="h6">
+          <Typography variant={compactMode ? "subtitle1" : "h6"}>
             {formId.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
           </Typography>
-          <IconButton
-            onClick={() => setCustomizationOpen(true)}
-            size="small"
-            title="Personalizza form"
-          >
-            <SettingsIcon />
-          </IconButton>
+          <Box display="flex" gap={1}>
+            <Chip
+              size="small"
+              icon={compactMode ? <Visibility /> : <VisibilityOff />}
+              label={compactMode ? "Compatto" : "Esteso"}
+              onClick={() => setCompactMode(!compactMode)}
+              variant="outlined"
+            />
+            <IconButton
+              onClick={() => setCustomizationOpen(true)}
+              size="small"
+              title="Personalizza form"
+            >
+              <SettingsIcon fontSize="small" />
+            </IconButton>
+          </Box>
         </Box>
 
-        {/* Form */}
+        {/* Form compatto */}
         <Box component="form" onSubmit={handleSubmit}>
-          {processedSections.map((section) => (
-            <Accordion key={section.id} defaultExpanded={!section.collapsed}>
-              <AccordionSummary expandIcon={<ExpandMore />}>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Typography variant="h6">{section.label}</Typography>
-                  {section.adminLocked && !isAdmin && (
-                    <Tooltip title="Sezione bloccata dall'amministratore">
-                      <Lock fontSize="small" color="warning" />
-                    </Tooltip>
-                  )}
-                </Box>
-                {section.description && (
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ ml: 2 }}
-                  >
-                    {section.description}
-                  </Typography>
-                )}
-              </AccordionSummary>
-              <AccordionDetails>
+          {processedSections.map((section) => {
+            const isCollapsed = collapsedSections.has(section.id);
+            
+            return (
+              <Paper
+                key={section.id}
+                elevation={0}
+                variant="outlined"
+                sx={{ mb: compactMode ? 1 : 2, overflow: 'hidden' }}
+              >
+                {/* Header sezione */}
                 <Box
                   display="flex"
-                  flexDirection={
-                    customization.layout === "horizontal" ? "row" : "column"
-                  }
-                  flexWrap="wrap"
-                  gap={2}
+                  justifyContent="space-between"
+                  alignItems="center"
+                  p={compactMode ? 1 : 1.5}
+                  sx={{ cursor: 'pointer', bgcolor: 'grey.50' }}
+                  onClick={() => toggleSectionCollapse(section.id)}
                 >
-                  {section.fields.map((field) => (
-                    <Box
-                      key={field.id}
-                      flex={
-                        customization.layout === "horizontal"
-                          ? "1 1 300px"
-                          : customization.layout === "grid"
-                          ? "1 1 250px"
-                          : "1"
-                      }
-                      minWidth={
-                        customization.layout === "grid" ? "250px" : "auto"
-                      }
-                    >
-                      {renderField(field, section.readOnly || false)}
-                    </Box>
-                  ))}
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Typography variant={compactMode ? "subtitle2" : "subtitle1"}>
+                      {section.label}
+                    </Typography>
+                    {section.adminLocked && (
+                      <Tooltip title="Sezione bloccata dall'amministratore">
+                        <Lock fontSize="small" color="warning" />
+                      </Tooltip>
+                    )}
+                  </Box>
+                  <IconButton size="small">
+                    {isCollapsed ? <ExpandMore /> : <ExpandLess />}
+                  </IconButton>
                 </Box>
-              </AccordionDetails>
-            </Accordion>
-          ))}
 
-          {/* Submit Button */}
-          <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
-            <Button type="submit" variant="contained" disabled={loading}>
+                {/* Contenuto sezione */}
+                <Collapse in={!isCollapsed}>
+                  <Box p={compactMode ? 1 : 2}>
+                    <Box
+                      display="grid"
+                      gridTemplateColumns={
+                        compactMode
+                          ? "repeat(auto-fit, minmax(250px, 1fr))"
+                          : "repeat(auto-fit, minmax(400px, 1fr))"
+                      }
+                      gap={compactMode ? 1 : 2}
+                    >
+                      {section.fields.map((field) => (
+                        <Box key={field.id}>
+                          {renderCompactField(field, section.readOnly || false)}
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                </Collapse>
+              </Paper>
+            );
+          })}
+
+          {/* Submit Button compatto */}
+          <Box mt={compactMode ? 2 : 3} display="flex" justifyContent="flex-end">
+            <Button 
+              type="submit" 
+              variant="contained" 
+              disabled={loading}
+              size={compactMode ? "small" : "medium"}
+            >
               {loading ? "Salvataggio..." : submitLabel}
             </Button>
           </Box>

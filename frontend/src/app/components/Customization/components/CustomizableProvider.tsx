@@ -1,12 +1,12 @@
 "use client";
 import React, { createContext, useContext } from 'react';
-import { useCustomization } from '../hooks/useCustomization';
+import { useServerCustomization } from '../hooks/useServerCustomization';
 import { CustomizationContextType } from '../types/customization.types';
 
 const CustomizationContext = createContext<CustomizationContextType | null>(null);
 
 export function CustomizationProvider({ children }: { children: React.ReactNode }) {
-  const customizationHook = useCustomization();
+  const customizationHook = useServerCustomization();
 
   return (
     <CustomizationContext.Provider value={customizationHook}>
