@@ -10,6 +10,7 @@ export const DEFAULT_GRID_CONFIGS = {
         defaultOrder: 1,
         sortable: true,
         filterable: true,
+        adminLock: false, // Modificabile da tutti
       },
       {
         id: 'email',
@@ -18,6 +19,7 @@ export const DEFAULT_GRID_CONFIGS = {
         defaultOrder: 2,
         sortable: true,
         filterable: true,
+        adminLock: false, // 🔒 BLOCCATA - dato sensibile
       },
       {
         id: 'role',
@@ -26,6 +28,7 @@ export const DEFAULT_GRID_CONFIGS = {
         defaultOrder: 3,
         sortable: true,
         filterable: true,
+        adminLock: false, // 🔒 BLOCCATA - controllo accessi
       },
       {
         id: 'createdAt', // Cambiato da 'createdAt' a 'data_di_creazione'
@@ -34,6 +37,7 @@ export const DEFAULT_GRID_CONFIGS = {
         defaultOrder: 4,
         sortable: true,
         filterable: false,
+        adminLock: false, // 🔒 BLOCCATA - dato di sistema
       },
     ] as GridColumn[]
   },

@@ -43,6 +43,9 @@ interface CompactCustomizableFormProps {
   initialValues?: Record<string, any>;
   submitLabel?: string;
   loading?: boolean;
+  adminConfig?: FormCustomization;
+  createdBy?: string;
+  onInheritAdminLocks?: (config: FormCustomization) => void;
 }
 
 export function CompactCustomizableForm({
@@ -54,6 +57,9 @@ export function CompactCustomizableForm({
   initialValues = {},
   submitLabel = "Salva",
   loading = false,
+  adminConfig,
+  createdBy,
+  onInheritAdminLocks,
 }: CompactCustomizableFormProps) {
   const authContext = useContext(AuthContext);
   const userRole = authContext?.user?.role;
@@ -80,7 +86,6 @@ export function CompactCustomizableForm({
             ...section,
             order: customSection?.order ?? section.defaultOrder ?? 0,
             hidden: customSection?.hidden ?? false,
-            readOnly: customSection?.readOnly ?? false,
             collapsed: customSection?.collapsed ?? false,
             adminLocked: customSection?.adminLocked ?? false,
           };
@@ -102,7 +107,6 @@ export function CompactCustomizableForm({
               ...field,
               order: customField?.order ?? field.defaultOrder ?? 0,
               hidden: customField?.hidden ?? false,
-              readOnly: customField?.readOnly ?? field.readOnly ?? false,
               required: customField?.required ?? field.required ?? false,
               adminLocked: customField?.adminLocked ?? field.adminLocked ?? false,
             };
@@ -188,7 +192,7 @@ export function CompactCustomizableForm({
   };
 
   const renderCompactField = (field: FormField, sectionReadOnly: boolean) => {
-    const isReadOnly = sectionReadOnly || field.readOnly || (!isAdmin && field.adminLocked);
+    const isReadOnly = sectionReadOnly || (!isAdmin && field.adminLocked);
     const fieldValue = formData[field.id] || "";
     const fieldError = errors[field.id];
 
@@ -297,33 +301,58 @@ export function CompactCustomizableForm({
     })();
 
     return (
-      <Box key={field.id} position="relative">
+      <Box key={field.id} sx={{ position: 'relative', minWidth: 0 }}>
         {fieldComponent}
         {/* Indicatori di stato del campo */}
-        <Box position="absolute" top={0} right={0} display="flex" gap={0.5}>
-          {field.adminLocked && (
-            <Tooltip title="Campo bloccato dall'amministratore">
-              <Lock fontSize="small" color="warning" />
-            </Tooltip>
-          )}
-          {isReadOnly && !field.adminLocked && (
-            <Tooltip title="Campo di sola lettura">
-              <VisibilityOff fontSize="small" color="disabled" />
-            </Tooltip>
-          )}
-        </Box>
+        {(field.adminLocked || (!isAdmin && field.adminLocked)) && (
+          <Box 
+            sx={{ 
+              position: 'absolute', 
+              top: 4, 
+              right: 4, 
+              display: 'flex', 
+              gap: 0.5,
+              zIndex: 1,
+              bgcolor: 'background.paper',
+              borderRadius: 0.5,
+              p: 0.25
+            }}
+          >
+            {field.adminLocked && (
+              <Tooltip title="Campo bloccato dall'amministratore">
+                <Lock fontSize="small" color="warning" />
+              </Tooltip>
+            )}
+            {field.adminLocked && !isAdmin && (
+              <Tooltip title="Campo bloccato per amministratori">
+                <Lock fontSize="small" color="disabled" />
+              </Tooltip>
+            )}
+          </Box>
+        )}
       </Box>
     );
   };
 
   return (
-    <Box height="100%" width="100%">
+    <Box 
+      sx={{ 
+        height: "100%", 
+        width: "100%", 
+        minHeight: 0, // Permette al contenitore di ridursi
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+    >
       <Paper 
         elevation={compactMode ? 1 : 3} 
         sx={{ 
           p: compactMode ? 2 : 3,
-          maxHeight: compactMode ? '70vh' : 'none',
-          overflow: compactMode ? 'auto' : 'visible'
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden', // Previene overflow del Paper stesso
+          minHeight: 0 // Permette al Paper di ridursi
         }}
       >
         {/* Header compatto */}
@@ -332,11 +361,21 @@ export function CompactCustomizableForm({
           justifyContent="space-between"
           alignItems="center"
           mb={compactMode ? 1 : 2}
+          sx={{ flexShrink: 0 }} // Header non si riduce mai
         >
-          <Typography variant={compactMode ? "subtitle1" : "h6"}>
+          <Typography 
+            variant={compactMode ? "subtitle1" : "h6"}
+            sx={{ 
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              flex: 1,
+              mr: 1
+            }}
+          >
             {formId.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
           </Typography>
-          <Box display="flex" gap={1}>
+          <Box display="flex" gap={1} sx={{ flexShrink: 0 }}>
             <Chip
               size="small"
               icon={compactMode ? <Visibility /> : <VisibilityOff />}
@@ -355,7 +394,15 @@ export function CompactCustomizableForm({
         </Box>
 
         {/* Form compatto */}
-        <Box component="form" onSubmit={handleSubmit}>
+        <Box 
+          component="form" 
+          onSubmit={handleSubmit}
+          sx={{ 
+            flex: 1,
+            overflow: 'auto', // Contenuto scrollabile
+            minHeight: 0 // Permette al form di ridursi
+          }}
+        >
           {processedSections.map((section) => {
             const isCollapsed = collapsedSections.has(section.id);
             
@@ -375,17 +422,24 @@ export function CompactCustomizableForm({
                   sx={{ cursor: 'pointer', bgcolor: 'grey.50' }}
                   onClick={() => toggleSectionCollapse(section.id)}
                 >
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Typography variant={compactMode ? "subtitle2" : "subtitle1"}>
+                  <Box display="flex" alignItems="center" gap={1} sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography 
+                      variant={compactMode ? "subtitle2" : "subtitle1"}
+                      sx={{ 
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
                       {section.label}
                     </Typography>
                     {section.adminLocked && (
                       <Tooltip title="Sezione bloccata dall'amministratore">
-                        <Lock fontSize="small" color="warning" />
+                        <Lock fontSize="small" color="warning" sx={{ flexShrink: 0 }} />
                       </Tooltip>
                     )}
                   </Box>
-                  <IconButton size="small">
+                  <IconButton size="small" sx={{ flexShrink: 0 }}>
                     {isCollapsed ? <ExpandMore /> : <ExpandLess />}
                   </IconButton>
                 </Box>
@@ -395,16 +449,25 @@ export function CompactCustomizableForm({
                   <Box p={compactMode ? 1 : 2}>
                     <Box
                       display="grid"
-                      gridTemplateColumns={
-                        compactMode
-                          ? "repeat(auto-fit, minmax(250px, 1fr))"
-                          : "repeat(auto-fit, minmax(400px, 1fr))"
-                      }
-                      gap={compactMode ? 1 : 2}
+                      sx={{
+                        gridTemplateColumns: {
+                          xs: '1fr', // Mobile: una colonna
+                          sm: compactMode 
+                            ? 'repeat(auto-fit, minmax(220px, 1fr))' 
+                            : 'repeat(auto-fit, minmax(350px, 1fr))',
+                          md: compactMode
+                            ? 'repeat(auto-fit, minmax(250px, 1fr))'
+                            : 'repeat(auto-fit, minmax(400px, 1fr))'
+                        },
+                        gap: compactMode ? 1 : 2,
+                        '& > *': {
+                          minWidth: 0 // Permette ai figli di ridursi
+                        }
+                      }}
                     >
                       {section.fields.map((field) => (
-                        <Box key={field.id}>
-                          {renderCompactField(field, section.readOnly || false)}
+                        <Box key={field.id} sx={{ minWidth: 0 }}>
+                          {renderCompactField(field, false)}
                         </Box>
                       ))}
                     </Box>
@@ -415,7 +478,20 @@ export function CompactCustomizableForm({
           })}
 
           {/* Submit Button compatto */}
-          <Box mt={compactMode ? 2 : 3} display="flex" justifyContent="flex-end">
+          <Box 
+            mt={compactMode ? 2 : 3} 
+            display="flex" 
+            justifyContent="flex-end"
+            sx={{ 
+              flexShrink: 0,
+              position: 'sticky',
+              bottom: 0,
+              bgcolor: 'background.paper',
+              pt: 1,
+              borderTop: '1px solid',
+              borderColor: 'divider'
+            }}
+          >
             <Button 
               type="submit" 
               variant="contained" 
@@ -434,10 +510,13 @@ export function CompactCustomizableForm({
           formId={formId}
           sections={defaultSections}
           currentConfig={customization}
+          adminConfig={adminConfig}
+          createdBy={createdBy}
           onSave={(config: FormCustomization) => {
             onCustomizationChange?.(config);
             setCustomizationOpen(false);
           }}
+          onInheritAdminLocks={onInheritAdminLocks}
         />
       </Paper>
     </Box>

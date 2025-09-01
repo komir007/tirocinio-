@@ -2,9 +2,9 @@
 import React, { useContext, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthContext } from "./Authcontext";
-import { CustomizableForm } from "./Customization/components/CustomizableForm";
+import { CompactCustomizableForm } from "./Customization/components/CompactCustomizableForm";
 import { useUserCustomization } from "./Customization/hooks/useUsercustomization";
-import { DEFAULT_FORM_CONFIGS } from "./Customization/config/forms/defaultFormConfigs";
+import { DEFAULT_FORM_CONFIGS } from "./Customization/config/defaulteFormConfigs";
 import {
   Paper,
   Box,
@@ -215,7 +215,7 @@ export default function CustomizableEditUser() {
         </Box>
 
         {/* Form customizzabile */}
-        <CustomizableForm
+        <CompactCustomizableForm
           formId="user-edit"
           sections={DEFAULT_FORM_CONFIGS['user-edit'].sections}
           customization={getUserEditFormConfig() || undefined}

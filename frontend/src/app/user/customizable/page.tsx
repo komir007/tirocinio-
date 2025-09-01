@@ -5,6 +5,7 @@ import CustomizableUsersTable from "../../components/CustomizableUsersTable";
 import CustomizationHelp from "../../components/CustomizationHelp";
 import { Box, Typography, Button, Chip } from "@mui/material";
 import { ArrowBack as ArrowBackIcon, Settings as SettingsIcon, TableChart as TableIcon } from "@mui/icons-material";
+import { ExampleUsersTableWithAdminLock } from "@/app/components/ExampleAdminLockTable";
 
 export default function CustomizableUsersPage() {
   const router = useRouter();
@@ -40,7 +41,9 @@ export default function CustomizableUsersPage() {
       </Box>
 
       <CustomizableUsersTable />
+
       
+
       {/* Guida rapida */}
       <CustomizationHelp variant="table" />
     </Box>

@@ -1,16 +1,14 @@
 // Componenti Customization
-export { CustomizableForm } from './components/CustomizableForm';
 export { CompactCustomizableForm } from './components/CompactCustomizableForm';
 export { CustomizableGrid } from './components/CustomizableGrid';
 export { CustomizationProvider, useCustomizationContext } from './components/CustomizableProvider';
 export { UnifiedCustomizationDialog } from './components/UnifiedCustomizationDialog';
 export { GridCustomizationDialog } from './components/GridCustomizationDialog';
-export { AdminFieldRestrictions } from './components/AdminFieldRestrictions';
-export { CustomizationDebugPanel } from './components/CustomizationDebugPanel';
 
 // Hooks
 export { useCustomization } from './hooks/useCustomization';
 export { useServerCustomization } from './hooks/useServerCustomization';
+export { useAdminConfig } from './hooks/useAdminConfig';
 export { useUserCustomization } from './hooks/useUsercustomization';
 
 // Types

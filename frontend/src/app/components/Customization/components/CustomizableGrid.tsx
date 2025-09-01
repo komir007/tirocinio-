@@ -26,6 +26,9 @@ interface CustomizableGridProps {
   loading?: boolean;
   actions?: (row: any) => React.ReactNode;
   hideHeader?: boolean; // Aggiunta questa prop
+  adminConfig?: GridCustomization;
+  createdBy?: string;
+  onInheritAdminLocks?: (config: GridCustomization) => void;
 }
 
 export function CustomizableGrid({
@@ -37,6 +40,9 @@ export function CustomizableGrid({
   loading = false,
   actions,
   hideHeader = false, // Default false per mantenere compatibilità
+  adminConfig,
+  createdBy,
+  onInheritAdminLocks,
 }: CustomizableGridProps) {
   const [customizationOpen, setCustomizationOpen] = useState(false);
   const [page, setPage] = useState(0);
@@ -243,6 +249,9 @@ export function CustomizableGrid({
         columns={defaultColumns}
         currentConfig={customization}
         onSave={handleCustomizationSave}
+        adminConfig={adminConfig}
+        createdBy={createdBy}
+        onInheritAdminLocks={onInheritAdminLocks}
       />
     </Box>
   );

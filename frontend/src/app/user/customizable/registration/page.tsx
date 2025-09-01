@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import CustomizableRegistration from "../../../components/CustomizableRegistration";
 import CustomizationHelp from "../../../components/CustomizationHelp";
 import { CustomizationProvider } from "../../../components/Customization/components/CustomizableProvider";
-import { CustomizationDebugPanel } from "../../../components/Customization/components/CustomizationDebugPanel";
 import { Box, Typography, Button, Chip } from "@mui/material";
 import { Edit as EditIcon, Settings as SettingsIcon } from "@mui/icons-material";
 
@@ -45,13 +44,8 @@ export default function CustomizableRegistrationPage() {
           <CustomizableRegistration />
         </Box>
 
-        {/* Debug Panel - solo in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <CustomizationDebugPanel />
-        )}
-
-        {/* Guida rapida */}
-        <CustomizationHelp variant="form" />
+   
+        
       </Box>
     </CustomizationProvider>
   );

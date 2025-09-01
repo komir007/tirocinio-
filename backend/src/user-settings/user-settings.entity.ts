@@ -6,7 +6,7 @@ export class UserSettings {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: false }) // CORRETTO: Esplicita che non può essere null
   userId: number;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })

@@ -1,4 +1,4 @@
-import { useCustomization } from './useCustomization';
+import { useCustomizationContext } from '../components/CustomizableProvider';
 import { GridCustomization, FormCustomization } from '../types/customization.types';
 
 export function useUserCustomization() {
@@ -11,7 +11,7 @@ export function useUserCustomization() {
     resetCustomization,
     exportCustomizations,
     importCustomizations
-  } = useCustomization();
+  } = useCustomizationContext();
 
   // Metodi specializzati per la sezione utenti
   const updateUsersGridCustomization = (gridConfig: GridCustomization) => {

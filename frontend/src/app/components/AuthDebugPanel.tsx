@@ -59,7 +59,7 @@ const AuthDebugPanel: React.FC = () => {
 
         {tokenInfo && (
           <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" gutterBottom>
+            <Typography variant="body2" component="div" gutterBottom>
               <strong>Token Status:</strong> 
               <Chip 
                 label={tokenInfo.isValid ? 'VALIDO' : 'SCADUTO'} 

@@ -123,6 +123,35 @@ export default function CustomizableUsersTable() {
   const authContext = useContext(AuthContext);
   const router = useRouter();
   const isAgent = authContext?.user?.role?.toLowerCase() === "agent";
+  const isAdmin = authContext?.user?.role?.toLowerCase() === "admin";
+  const userEmail = authContext?.user?.email;
+  
+  // Mock admin config per test della griglia (da rimuovere quando il backend è pronto)
+  const mockGridAdminConfig = isAdmin ? undefined : {
+    columns: [
+      {
+        id: "name",
+        adminLock: false,
+        hidden: false,
+        width: 150,
+        order: 0
+      },
+      {
+        id: "role", 
+        adminLock: true, // Admin ha bloccato questa colonna
+        hidden: false,
+        width: 100,
+        order: 1
+      },
+      {
+        id: "email",
+        adminLock: false,
+        hidden: false,
+        width: 200,
+        order: 2
+      }
+    ]
+  };
   
   // Customization hooks
   const {
@@ -329,6 +358,12 @@ export default function CustomizableUsersTable() {
           onCustomizationChange={updateUsersGridCustomization}
           loading={loading}
           actions={renderActions}
+          adminConfig={mockGridAdminConfig}
+          createdBy={userEmail}
+          onInheritAdminLocks={(inheritedConfig) => {
+            console.log('Grid admin locks inherited:', inheritedConfig);
+            // Qui potresti salvare la configurazione ereditata se necessario
+          }}
           // hideHeader={false} // RIMOSSO: non necessario se default è false
         />
       </Paper>

@@ -27,9 +27,9 @@ export class UserSettingsService {
     let userSettings = await this.findByUserId(userId);
     
     if (!userSettings) {
-      // Crea nuove impostazioni se non esistono
+      // CORRETTO: Assicurati che userId sia incluso quando si crea un nuovo record
       userSettings = await this.create({
-        userId,
+        userId, // Importante: includi sempre userId
         ...updateUserSettingsDto
       });
     } else {
@@ -48,13 +48,27 @@ export class UserSettingsService {
     }
   }
 
-  // Metodo per aggiornare solo le configurazioni di customizzazione
+  // CORRETTO: Metodo per aggiornare solo le configurazioni di customizzazione
   async updateCustomizationConfig(userId: number, customizationConfig: any): Promise<UserSettings> {
+    console.log('Updating customization config for userId:', userId, 'with config:', customizationConfig);
+    
+    // Verifica che userId sia un numero valido
+    if (!userId || isNaN(userId)) {
+      throw new Error(`Invalid userId: ${userId}`);
+    }
+
     return await this.updateByUserId(userId, { customizationConfig });
   }
 
-  // Metodo per aggiornare le restrizioni admin (solo per admin)
+  // CORRETTO: Metodo per aggiornare le restrizioni admin (solo per admin)
   async updateAdminFieldRestrictions(userId: number, adminFieldRestrictions: any): Promise<UserSettings> {
+    console.log('Updating admin field restrictions for userId:', userId);
+    
+    // Verifica che userId sia un numero valido
+    if (!userId || isNaN(userId)) {
+      throw new Error(`Invalid userId: ${userId}`);
+    }
+
     return await this.updateByUserId(userId, { adminFieldRestrictions });
   }
 }

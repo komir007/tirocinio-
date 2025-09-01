@@ -3,21 +3,16 @@ import React, { useContext, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthContext } from "./Authcontext";
 import { CompactCustomizableForm } from "./Customization/components/CompactCustomizableForm";
-import { AdminFieldRestrictions } from "./Customization/components/AdminFieldRestrictions";
+import { useAdminConfig } from "./Customization/hooks/useAdminConfig";
+
 import { useCustomizationContext } from "./Customization/components/CustomizableProvider";
 import { DEFAULT_FORM_CONFIGS } from "./Customization/config/defaulteFormConfigs";
 import { 
-  Paper, 
   Box, 
   Typography, 
-  Button, 
   Snackbar, 
-  Alert, 
-  IconButton,
-  Tooltip,
-  Fab
+  Alert
 } from "@mui/material";
-import { AdminPanelSettings } from "@mui/icons-material";
 
 export default function CustomizableRegistration() {
   const authContext = useContext(AuthContext);
@@ -25,6 +20,14 @@ export default function CustomizableRegistration() {
   const by = authContext?.user?.email;
   const isAgent = authContext?.user?.role?.toLowerCase() === "agent";
   const isAdmin = authContext?.user?.role?.toLowerCase() === "admin";
+
+  // Hook per recuperare la configurazione admin (solo per non-admin)
+  const { 
+    adminConfig, 
+    loading: adminConfigLoading, 
+    error: adminConfigError,
+    createdBy: adminCreatedBy 
+  } = useAdminConfig("user-registration");
 
   // Customization hooks
   const {
@@ -35,7 +38,6 @@ export default function CustomizableRegistration() {
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
 
   const handleSubmit = async (formData: Record<string, any>) => {
     setLoading(true);
@@ -79,10 +81,6 @@ export default function CustomizableRegistration() {
     }
   };
 
-  const handleCancel = () => {
-    router.back();
-  };
-
   // Prepara sezioni del form
   const formSections = DEFAULT_FORM_CONFIGS["user-registration"].sections.map(
     (section) => {
@@ -101,7 +99,8 @@ export default function CustomizableRegistration() {
     }
   );
 
-  if (customizationLoading) {
+  // Loading state - include admin config loading for non-admin users
+  if (customizationLoading || (!isAdmin && adminConfigLoading)) {
     return (
       <Box
         display="flex"
@@ -109,9 +108,17 @@ export default function CustomizableRegistration() {
         alignItems="center"
         height="200px"
       >
-        <Typography>Caricamento configurazione...</Typography>
+        <Typography>
+          Caricamento configurazione...
+          {!isAdmin && adminConfigLoading && " (Verificando restrizioni admin...)"}
+        </Typography>
       </Box>
     );
+  }
+
+  // Log admin config error for debugging
+  if (adminConfigError) {
+    console.warn('⚠️ Admin config error:', adminConfigError);
   }
 
   return (
@@ -136,6 +143,16 @@ export default function CustomizableRegistration() {
         initialValues={{
           role: isAgent ? "client" : "",
           createdBy: by || "",
+        }}
+        adminConfig={adminConfig || undefined}
+        createdBy={adminCreatedBy || by}
+        onInheritAdminLocks={(inheritedConfig) => {
+          console.log('🔒 Admin locks inherited from API:', {
+            inheritedConfig,
+            originalAdminConfig: adminConfig,
+            adminCreatedBy
+          });
+          // Qui potresti salvare la configurazione ereditata se necessario
         }}
       />
 

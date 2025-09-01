@@ -125,7 +125,6 @@ export const DEFAULT_FORM_CONFIGS = {
             required: true,
             defaultOrder: 2,
             section: 'user-info',
-            readOnly: true,
             validation: {
               pattern: '^[^@]+@[^@]+\.[^@]+$',
               message: 'Inserisci un indirizzo email valido'

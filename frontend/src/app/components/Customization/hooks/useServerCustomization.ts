@@ -16,7 +16,12 @@ export function useServerCustomization() {
 
   // Carica configurazioni dal server
   const loadConfigFromServer = useCallback(async () => {
-    console.log('🔄 Tentativo di caricamento configurazioni dal server:', { userId, fetchWithAuth: !!fetchWithAuth });
+    console.log('🔄 Tentativo di caricamento configurazioni dal server:', { 
+      userId, 
+      userIdType: typeof userId,
+      fetchWithAuth: !!fetchWithAuth,
+      userRole
+    });
     
     if (!fetchWithAuth || !userId) {
       console.log('⚠️ Utente non autenticato, skipping caricamento server');
@@ -24,9 +29,18 @@ export function useServerCustomization() {
       return;
     }
 
+    // Verifica che userId sia valido
+    const numericUserId = typeof userId === 'string' ? parseInt(userId) : userId;
+    if (!numericUserId || isNaN(numericUserId)) {
+      console.error('❌ userId non valido:', userId);
+      setError('ID utente non valido');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      console.log('📤 Richiesta GET al server...');
+      console.log('📤 Richiesta GET al server con userId:', numericUserId);
       const response = await fetchWithAuth(`${API_BASE_URL}/user-settings/my-settings`);
       
       console.log('📥 Risposta GET server:', response.status, response.ok);
@@ -85,7 +99,12 @@ export function useServerCustomization() {
 
   // Salva configurazioni sul server
   const saveConfigToServer = useCallback(async (newConfig: CustomizationConfig) => {
-    console.log('🔄 Tentativo di salvataggio configurazioni:', { newConfig, userId, fetchWithAuth: !!fetchWithAuth });
+    console.log('🔄 Tentativo di salvataggio configurazioni:', { 
+      newConfig, 
+      userId,
+      userIdType: typeof userId,
+      fetchWithAuth: !!fetchWithAuth 
+    });
     
     if (!fetchWithAuth || !userId) {
       console.log('⚠️ Fallback al localStorage - utente non autenticato');
@@ -96,8 +115,16 @@ export function useServerCustomization() {
       return;
     }
 
+    // Verifica che userId sia valido
+    const numericUserId = typeof userId === 'string' ? parseInt(userId) : userId;
+    if (!numericUserId || isNaN(numericUserId)) {
+      console.error('❌ userId non valido per salvataggio:', userId);
+      setError('ID utente non valido per il salvataggio');
+      return;
+    }
+
     try {
-      console.log('📤 Invio richiesta al server...');
+      console.log('📤 Invio richiesta al server con userId:', numericUserId);
       const response = await fetchWithAuth(`${API_BASE_URL}/user-settings/my-settings/customization`, {
         method: 'PUT',
         headers: {
@@ -221,6 +248,39 @@ export function useServerCustomization() {
   }, [config, saveConfigToServer]);
 
   // Funzioni per admin - gestione restrizioni campi
+  const getAdminFieldRestrictions = useCallback(async (formId?: string) => {
+    if (!fetchWithAuth) {
+      console.warn('User not authenticated, cannot fetch admin restrictions');
+      return null;
+    }
+
+    try {
+      console.log('🔍 Fetching admin field restrictions for form:', formId);
+      const url = formId 
+        ? `${API_BASE_URL}/user-settings/admin/field-restrictions?formId=${formId}`
+        : `${API_BASE_URL}/user-settings/admin/field-restrictions`;
+        
+      const response = await fetchWithAuth(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        console.warn('No admin restrictions found or access denied');
+        return null;
+      }
+
+      const adminConfig = await response.json();
+      console.log('📋 Admin restrictions retrieved:', adminConfig);
+      return adminConfig;
+    } catch (error) {
+      console.error('Error fetching admin field restrictions:', error);
+      return null;
+    }
+  }, [fetchWithAuth]);
+
   const updateAdminFieldRestrictions = useCallback(async (targetUserId: number, restrictions: any) => {
     if (!fetchWithAuth || userRole !== 'admin') {
       throw new Error('Only admins can set field restrictions');
@@ -278,6 +338,7 @@ export function useServerCustomization() {
     resetCustomization,
     exportCustomizations,
     importCustomizations,
+    getAdminFieldRestrictions,
     updateAdminFieldRestrictions,
     refreshConfig: loadConfigFromServer,
   };

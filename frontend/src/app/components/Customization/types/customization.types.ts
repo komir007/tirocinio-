@@ -8,6 +8,7 @@ export interface GridColumn {
   sortable?: boolean;
   filterable?: boolean;
   defaultOrder?: number;
+  adminLock?: boolean; // Se true, questa colonna è bloccata dall'admin per impostazione predefinita
   render?: (value: any, row: any) => React.ReactNode;
 }
 
@@ -18,11 +19,13 @@ export interface GridCustomization {
     hidden?: boolean;
     width?: number;
     pinned?: 'left' | 'right' | null;
+    adminLock?: boolean; // Se true, solo gli admin possono modificare questa colonna
   }>;
   pageSize?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   filters?: Record<string, any>;
+  adminLock?: boolean; // Se true, solo gli admin possono modificare l'intera configurazione
 }
 
 export interface FormField {
@@ -33,7 +36,6 @@ export interface FormField {
   placeholder?: string;
   defaultOrder?: number;
   section: string;
-  readOnly?: boolean;
   hidden?: boolean;
   order?: number;
   adminLocked?: boolean; // Nuovo: se true, solo gli admin possono modificare questo campo
@@ -52,7 +54,6 @@ export interface FormSection {
   description?: string;
   defaultOrder?: number;
   collapsible?: boolean;
-  readOnly?: boolean;
   hidden?: boolean;
   collapsed?: boolean;
   order?: number;
@@ -65,7 +66,6 @@ export interface FormCustomization {
     id: string;
     order?: number;
     hidden?: boolean;
-    readOnly?: boolean;
     collapsed?: boolean;
     adminLocked?: boolean; // Se true, solo gli admin possono modificare questa sezione
   }>;
@@ -73,7 +73,6 @@ export interface FormCustomization {
     id: string;
     order?: number;
     hidden?: boolean;
-    readOnly?: boolean;
     required?: boolean;
     adminLocked?: boolean; // Se true, solo gli admin possono modificare questo campo
   }>;
