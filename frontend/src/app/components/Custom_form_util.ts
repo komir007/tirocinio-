@@ -59,6 +59,25 @@ const isFieldReadOnly = (fieldId: string): boolean => {
 
 // Funzione per trovare il container completo di un campo MUI
 const findFieldContainer = (fieldId: string): HTMLElement | null => {
+  // Prima prova a cercare una box con pattern field-*-box
+  const fieldBoxSelectors = [
+    `#field-${fieldId}-box`,
+    `[id*="field-${fieldId}-box"]`,
+    `[id^="field-"][id*="${fieldId}"][id$="-box"]`,
+    `[class*="field-${fieldId}-box"]`,
+    `[class*="field"][class*="${fieldId}"][class*="box"]`
+  ];
+  
+  console.log(`🔍 Cercando box per campo: ${fieldId}`);
+  
+  for (const selector of fieldBoxSelectors) {
+    const boxElement = document.querySelector(selector) as HTMLElement;
+    if (boxElement) {
+      console.log(`📦 Trovata field-box per ${fieldId}:`, boxElement.id || boxElement.className);
+      return boxElement;
+    }
+  }
+  
   // Prima prova con l'ID diretto
   let element = document.getElementById(fieldId);
   
@@ -67,12 +86,20 @@ const findFieldContainer = (fieldId: string): HTMLElement | null => {
     const input = document.querySelector(`input[name="${fieldId}"], textarea[name="${fieldId}"], select[name="${fieldId}"]`) as HTMLElement;
     if (input) {
       element = input;
+      console.log(`🎯 Trovato input per name: ${fieldId}`);
     }
   }
   
   if (!element) {
     console.warn(`⚠️ Element not found for fieldId: ${fieldId}`);
     return null;
+  }
+  
+  // Cerca un container con pattern field-*-box come parent
+  const fieldBoxParent = element.closest('[id*="field-"][id*="-box"], [class*="field-"][class*="-box"]') as HTMLElement;
+  if (fieldBoxParent) {
+    console.log(`📦 Trovato field-box parent per ${fieldId}:`, fieldBoxParent.id || fieldBoxParent.className);
+    return fieldBoxParent;
   }
   
   // Per i campi MUI, cerca il container che include label + input
@@ -114,10 +141,23 @@ export const mapAllInputs = () => {
   const formContainer = document.querySelector('[aria-label="Registration Form"]') as HTMLElement;
   if (!formContainer) return [];
 
+  // Prima cerca tutte le field-box
+  const fieldBoxes = formContainer.querySelectorAll('[id*="field-"][id*="-box"], [class*="field-"][class*="-box"]') as NodeListOf<HTMLElement>;
+  console.log(`📦 Trovate ${fieldBoxes.length} field-box nel form`);
+
   const inputs = formContainer.querySelectorAll('input, textarea, select') as NodeListOf<HTMLInputElement>;
   return Array.from(inputs).map((input, index) => {
     const parentSection = input.closest('[id^="sezione_"]') as HTMLElement;
-    const inputContainer = input.closest('[id]') as HTMLElement;
+    
+    // Cerca il field-box container per questo input
+    const fieldBox = input.closest('[id*="field-"][id*="-box"], [class*="field-"][class*="-box"]') as HTMLElement;
+    const inputContainer = fieldBox || input.closest('[id]') as HTMLElement;
+    
+    console.log(`🔍 Input ${input.name || input.id}:`, {
+      hasFieldBox: !!fieldBox,
+      fieldBoxId: fieldBox?.id,
+      containerId: inputContainer?.id
+    });
     
     return {
       index,
@@ -125,6 +165,7 @@ export const mapAllInputs = () => {
       name: input.name,
       id: input.id,
       containerId: inputContainer?.id || input.id,
+      fieldBoxId: fieldBox?.id || null,
       value: input.value,
       disabled: input.disabled,
       required: input.required,
@@ -132,6 +173,8 @@ export const mapAllInputs = () => {
       label: getFieldLabel(input),
       order: getFieldOrder(inputContainer || input, parentSection),
       element: input,
+      container: inputContainer,
+      fieldBox: fieldBox,
       parentSection: parentSection?.id || null
     };
   });
@@ -158,6 +201,62 @@ const getFieldOrder = (fieldElement: HTMLElement, parentSection: HTMLElement | n
     const container = field.closest('[id]') || field;
     return container === fieldElement || container.contains(fieldElement);
   });
+};
+
+export const mapAllFieldBoxes = () => {
+  const formContainer = document.querySelector('[aria-label="Registration Form"]') as HTMLElement;
+  if (!formContainer) {
+    console.warn('⚠️ Form container non trovato');
+    return [];
+  }
+
+  const fieldBoxes = formContainer.querySelectorAll('[id*="field-"][id*="-box"], [class*="field-"][class*="-box"]') as NodeListOf<HTMLElement>;
+  console.log(`📦 Mappatura di ${fieldBoxes.length} field-box trovate`);
+
+  return Array.from(fieldBoxes).map((box, index) => {
+    const parentSection = box.closest('[id^="sezione_"]') as HTMLElement;
+    const inputs = box.querySelectorAll('input, textarea, select') as NodeListOf<HTMLInputElement>;
+    const primaryInput = inputs[0]; // Input principale della box
+    
+    console.log(`📦 Field-box ${box.id}:`, {
+      inputCount: inputs.length,
+      primaryInputName: primaryInput?.name,
+      section: parentSection?.id
+    });
+
+    return {
+      index,
+      id: box.id,
+      className: box.className,
+      visible: box.style.display !== 'none',
+      order: getFieldOrder(box, parentSection),
+      inputCount: inputs.length,
+      primaryInput: primaryInput ? {
+        name: primaryInput.name,
+        id: primaryInput.id,
+        type: primaryInput.type,
+        disabled: primaryInput.disabled,
+        required: primaryInput.required
+      } : null,
+      label: getFieldBoxLabel(box),
+      element: box,
+      parentSection: parentSection?.id || null
+    };
+  });
+};
+
+const getFieldBoxLabel = (box: HTMLElement): string => {
+  // Cerca la label dentro la field-box
+  const label = box.querySelector('label');
+  if (label) return label.textContent?.trim() || '';
+  
+  // Cerca un Typography o span con il testo della label
+  const typography = box.querySelector('Typography, .MuiTypography-root, .field-label, span[class*="label"]');
+  if (typography) return typography.textContent?.trim() || '';
+  
+  // Fallback: usa l'ID della box
+  const idMatch = box.id.match(/field-(.+)-box/);
+  return idMatch ? idMatch[1].replace(/-/g, ' ') : 'Campo senza nome';
 };
 
 export const mapAllSections = () => {
@@ -434,6 +533,11 @@ export const setAdminLock = (sectionId: string, locked: boolean) => {
 
 export const getCurrentFormConfig = (): SectionConfig[] => {
   const sections = mapFormStructure();
+  const fieldBoxes = mapAllFieldBoxes();
+  
+  console.log('🗺️ Mapped form structure:', sections);
+  console.log('📦 Mapped field-boxes:', fieldBoxes);
+  
   const sortedSections = sections.sort((a, b) => {
     const orderA = Number(a.order) || a.sectionIndex;
     const orderB = Number(b.order) || b.sectionIndex;
@@ -447,7 +551,8 @@ export const getCurrentFormConfig = (): SectionConfig[] => {
     readOnly: isReadOnlySection(section.id),
     adminLocked: getAdminLock(section.id),
     order: index,
-    fields: section.fields || []
+    fields: section.fields || [],
+    fieldBoxes: fieldBoxes.filter(box => box.parentSection === section.id)
   }));
 };
 

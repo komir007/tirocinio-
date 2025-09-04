@@ -27,8 +27,8 @@ import {
   reorderFieldsInSection,
   getCurrentFormConfig,
   applyFormConfig,
-  SectionConfig
-} from './Custom_form_util';
+  SectionConfig,
+} from "./Custom_form_util";
 
 export default function Registration() {
   const authContext = useContext(AuthContext);
@@ -102,8 +102,6 @@ export default function Registration() {
     }
   };
 
-
-
   return (
     <Box
       display="flex"
@@ -134,7 +132,6 @@ export default function Registration() {
           flexDirection="column"
           flexGrow={1}
         >
-          
           <Box
             id="sezione_anagrafica"
             key="sezione_anagrafica"
@@ -152,38 +149,41 @@ export default function Registration() {
               flexDirection={{ xs: "column", sm: "row" }}
               width={{ xs: "100%", sm: "50%" }}
               gap={2}
-              sx={{ display: 'flex', flexDirection: 'row' }} // Per supportare order
+              sx={{ display: "flex", flexDirection: "row" }} // Per supportare order
             >
-              <TextField
-                id="field-name"
-                name="name"
-                label="Nome"
-                value={form.name}
-                onChange={handleChange}
-                required
-                fullWidth
-                sx={{
-                  flex: 1,
-                  "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                }}
-              />
-              <TextField
-                id="field-cognome"
-                name="cognome"
-                label="Cognome"
-                //value={}
-                //onChange={handleChange}
-                required
-                fullWidth
-                sx={{
-                  flex: 1,
-                  "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                }}
-              />
+              <Box id="field-name-box">
+                <TextField
+                  id="f-name"
+                  name="name"
+                  label="Nome"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                  fullWidth
+                  sx={{
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                  }}
+                />
+              </Box>
+              <Box id="field-cognome-box">
+                <TextField
+                  id="f-cognome"
+                  name="cognome"
+                  label="Cognome"
+                  //value={}
+                  //onChange={handleChange}
+                  required
+                  fullWidth
+                  sx={{
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                  }}
+                />
+              </Box>
             </Box>
-          <Divider />
+            <Divider />
           </Box>
-
 
           <Box
             id="sezione_accesso"
@@ -199,41 +199,43 @@ export default function Registration() {
               display="flex"
               flexDirection={{ xs: "column", sm: "row" }}
               gap={2}
-              sx={{ display: 'flex', flexDirection: 'row' }} // Per supportare order
+              sx={{ display: "flex", flexDirection: "row" }} // Per supportare order
             >
-              <TextField
-                id="field-email"
-                name="email"
-                label="Email"
-                type="email"
-                value={form.email}
-                onChange={handleChange}
-                required
-                fullWidth
-                sx={{
-                  flex: 1,
-                  "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                }}
-              />
-              <TextField
-                id="field-password"
-                name="password"
-                label="Password"
-                type="password"
-                value={form.password}
-                onChange={handleChange}
-                required
-                fullWidth
-                sx={{
-                  flex: 1,
-                  "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                }}
-              />
+              <Box id="field-email-box">
+                <TextField
+                  id="f-email"
+                  name="email"
+                  label="Email"
+                  type="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                  fullWidth
+                  sx={{
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                  }}
+                />
+              </Box>
+              <Box id="field-password-box">
+                <TextField
+                  id="f-password"
+                  name="password"
+                  label="Password"
+                  type="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                  fullWidth
+                  sx={{
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                  }}
+                />
+              </Box>
             </Box>
             <Divider />
           </Box>
-
-          
 
           <Box
             m={2}
@@ -251,11 +253,12 @@ export default function Registration() {
               gap={2}
             >
               {!isAgent && (
-                <TextField
-                  id="field-role"
-                  name="role"
-                  label="Ruolo"
-                  select
+                <Box width="50%" id="field-role-box">
+                  <TextField
+                    id="f-role"
+                    name="role"
+                    label="Ruolo"
+                    select
                   value={form.role}
                   onChange={handleChange}
                   required
@@ -269,22 +272,18 @@ export default function Registration() {
                   <MenuItem value="agent">Agent</MenuItem>
                   <MenuItem value="client">Client</MenuItem>
                 </TextField>
+                </Box>
               )}
             </Box>
             <Divider />
           </Box>
-         
         </Box>
         <Divider />
-        
-        
-        
+
         <Divider />
 
         <Box display="flex" p={2} justifyContent="flex-end" gap={2}>
-          <IconButton
-           onClick={handleOpenDialog}
-           aria-label="settings">
+          <IconButton onClick={handleOpenDialog} aria-label="settings">
             <SettingsIcon />
           </IconButton>
           <Button variant="outlined" color="primary" onClick={handleCancel}>
@@ -310,7 +309,7 @@ export default function Registration() {
           Registrazione avvenuta con successo!
         </Alert>
       </Snackbar>
-      
+
       <CustomFormDialog
         open={dialogOpen}
         onClose={handleCloseDialog}
