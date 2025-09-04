@@ -15,26 +15,16 @@ import { Divider, IconButton } from "@mui/material";
 import { Settings as SettingsIcon } from "@mui/icons-material";
 import CustomFormDialog from "./Custom_form_dialog";
 import {
-  traverseAllElements,
-  mapAllInputs,
-  mapAllSections,
-  mapFormStructure,
-  queryElements,
-  getFormStats,
-  hideField,
-  showField,
-  makeFieldReadOnly,
-  makeFieldEditable,
-  reorderField,
   reorderSections,
   hideSections,
   showSections,
+  hideFields,
+  showFields,
+  makeFieldsReadOnly,
+  makeFieldsEditable,
   makeSectionReadOnly,
   makeSectionEditable,
-  hideAllFields,
-  showAllFields,
-  makeAllReadOnly,
-  makeAllEditable,
+  reorderFieldsInSection,
   getCurrentFormConfig,
   applyFormConfig,
   SectionConfig
@@ -55,46 +45,6 @@ export default function Registration() {
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const router = useRouter();
-
-  // Manipolazione singoli campi: usare le funzioni importate da custom_form_util
-
-  // ... le funzioni di mapping e query sono esternalizzate in custom_form_util.ts
-
-  // Manipolazione sezioni e read-only: usare le funzioni importate da custom_form_util
-
-  // Configurazioni predefinite
-  const applyConfiguration = (config: string) => {
-    switch (config) {
-      case 'reverse':
-        // Inverti l'ordine delle sezioni
-        reorderSections(['sezione_ruolo', 'sezione_accesso', 'sezione_anagrafica']);
-        break;
-      case 'minimal':
-        // Mostra solo sezione accesso
-        hideSections(['sezione_anagrafica', 'sezione_ruolo']);
-        showSections(['sezione_accesso']);
-        break;
-      case 'readonly_personal':
-        // Rendi read-only la sezione anagrafica
-        makeSectionReadOnly('sezione_anagrafica');
-        break;
-      case 'reset':
-        // Reset tutto
-        showSections(['sezione_anagrafica', 'sezione_accesso', 'sezione_ruolo']);
-        makeSectionEditable('sezione_anagrafica');
-        makeSectionEditable('sezione_accesso');
-        makeSectionEditable('sezione_ruolo');
-        reorderSections(['sezione_anagrafica', 'sezione_accesso', 'sezione_ruolo']);
-        break;
-    }
-  };
-
-  // Azioni globali sul form
-  // Azioni globali: hide/show/reorder/read-only centralizzate in custom_form_util
-
-  // Query selector avanzato con filtri: funzione esternalizzata in custom_form_util.ts
-
-  // Statistiche complete del form: funzione esternalizzata in custom_form_util.ts
 
   const handleOpenDialog = () => {
     setDialogOpen(true);
@@ -184,6 +134,7 @@ export default function Registration() {
           flexDirection="column"
           flexGrow={1}
         >
+          
           <Box
             id="sezione_anagrafica"
             key="sezione_anagrafica"

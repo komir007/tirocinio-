@@ -1,92 +1,163 @@
-// Utility di mapping/analisi del form DOM
+// Utility di mapping e gestione del form - Versione Semplificata
 
-export const getElementPath = (element: HTMLElement): string => {
-  const path: string[] = [];
-  let current: HTMLElement | null = element;
+// === TIPI ===
+export type FieldConfig = {
+  id: string;
+  containerId: string;
+  name: string;
+  type: string;
+  value: string;
+  disabled: boolean;
+  required: boolean;
+  placeholder: string;
+  label: string;
+  order: number;
+  fieldIndex: number;
+  visible: boolean;
+  readOnly: boolean;
+  adminLocked: boolean;
+};
 
-  while (current && current !== document.body) {
-    let selector = current.tagName.toLowerCase();
+export type SectionConfig = {
+  id: string;
+  title: string;
+  visible: boolean;
+  readOnly: boolean;
+  adminLocked: boolean;
+  order: number;
+  fields?: FieldConfig[];
+};
 
-    if (current.id) {
-      selector += `#${current.id}`;
-    } else {
-      let classSelector = '';
-      try {
-        if (typeof (current.className) === 'string' && current.className.trim()) {
-          classSelector = current.className.trim().split(/\s+/).join('.');
-        } else if (current.classList && current.classList.length) {
-          classSelector = Array.from(current.classList).join('.');
-        } else {
-          const attr = current.getAttribute && current.getAttribute('class');
-          if (attr) classSelector = attr.trim().split(/\s+/).join('.');
-        }
-      } catch (e) {
-        classSelector = '';
-      }
+// === FUNZIONI DI GESTIONE CAMPI ===
+const getFieldAdminLock = (fieldId: string): boolean => {
+  const locks = JSON.parse(localStorage.getItem('fieldAdminLocks') || '{}');
+  return !!locks[fieldId];
+};
 
-      if (classSelector) selector += `.${classSelector}`;
-    }
-
-    path.unshift(selector);
-    current = current.parentElement;
+const setFieldAdminLock = (fieldId: string, locked: boolean) => {
+  const locks = JSON.parse(localStorage.getItem('fieldAdminLocks') || '{}');
+  if (locked) {
+    locks[fieldId] = true;
+  } else {
+    delete locks[fieldId];
   }
-
-  return path.join(' > ');
+  localStorage.setItem('fieldAdminLocks', JSON.stringify(locks));
 };
 
-export const traverseAllElements = () => {
-  const formContainer = document.querySelector('[aria-label="Registration Form"]') as HTMLElement;
-  if (!formContainer) return [];
-
-  const allElements: any[] = [];
-
-  const traverse = (node: Node, depth = 0) => {
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const element = node as HTMLElement;
-      const elementInfo = {
-        depth,
-        tag: element.tagName.toLowerCase(),
-        id: element.id || null,
-        className: element.className || null,
-        type: element.getAttribute('type') || null,
-        name: element.getAttribute('name') || null,
-        label: element.getAttribute('aria-label') || null,
-        textContent: element.textContent?.trim().substring(0, 100) || null,
-        isInput: ['input', 'textarea', 'select'].includes(element.tagName.toLowerCase()),
-        isButton: element.tagName.toLowerCase() === 'button',
-        isSection: element.id?.includes('sezione_') || false,
-        element: element,
-        path: getElementPath(element)
-      };
-      allElements.push(elementInfo);
-    }
-
-    for (let i = 0; i < node.childNodes.length; i++) {
-      traverse(node.childNodes[i], depth + 1);
-    }
-  };
-
-  traverse(formContainer);
-  return allElements;
+const isFieldVisible = (fieldId: string): boolean => {
+  const element = document.getElementById(fieldId);
+  if (!element) return false;
+  return element.style.display !== 'none';
 };
 
+const isFieldReadOnly = (fieldId: string): boolean => {
+  const element = document.getElementById(fieldId);
+  if (!element) return false;
+  const input = element.querySelector('input, textarea, select') as HTMLInputElement;
+  return input ? input.disabled : false;
+};
+
+// Funzione per trovare il container completo di un campo MUI
+const findFieldContainer = (fieldId: string): HTMLElement | null => {
+  // Prima prova con l'ID diretto
+  let element = document.getElementById(fieldId);
+  
+  if (!element) {
+    // Se non trovato, cerca per name attribute
+    const input = document.querySelector(`input[name="${fieldId}"], textarea[name="${fieldId}"], select[name="${fieldId}"]`) as HTMLElement;
+    if (input) {
+      element = input;
+    }
+  }
+  
+  if (!element) {
+    console.warn(`⚠️ Element not found for fieldId: ${fieldId}`);
+    return null;
+  }
+  
+  // Per i campi MUI, cerca il container che include label + input
+  // Possibili selettori per MUI components:
+  const muiSelectors = [
+    '.MuiFormControl-root',
+    '.MuiTextField-root', 
+    '.MuiInputBase-root',
+    '[class*="MuiFormControl"]',
+    '[class*="TextField"]'
+  ];
+  
+  // Cerca il container MUI più vicino
+  for (const selector of muiSelectors) {
+    const muiContainer = element.closest(selector) as HTMLElement;
+    if (muiContainer) {
+      console.log(`📦 Found MUI container for ${fieldId}:`, muiContainer.className);
+      return muiContainer;
+    }
+  }
+  
+  // Se non è un campo MUI, cerca un container generico
+  const genericContainer = element.closest('[id]') || 
+                          element.closest('.form-group') ||
+                          element.closest('.field-container') ||
+                          element.closest('div');
+  
+  if (genericContainer && genericContainer !== element && genericContainer instanceof HTMLElement) {
+    console.log(`📦 Found generic container for ${fieldId}:`, genericContainer.id || genericContainer.className);
+    return genericContainer;
+  }
+  
+  // Fallback: ritorna l'elemento stesso
+  console.log(`📦 Using element itself for ${fieldId}`);
+  return element;
+};
+// === FUNZIONI DI MAPPING ===
 export const mapAllInputs = () => {
   const formContainer = document.querySelector('[aria-label="Registration Form"]') as HTMLElement;
   if (!formContainer) return [];
 
   const inputs = formContainer.querySelectorAll('input, textarea, select') as NodeListOf<HTMLInputElement>;
-  return Array.from(inputs).map((input, index) => ({
-    index,
-    type: input.type,
-    name: input.name,
-    id: input.id,
-    value: input.value,
-    disabled: input.disabled,
-    required: input.required,
-    placeholder: input.placeholder,
-    element: input,
-    parentSection: input.closest('[id^="sezione_"]')?.id || null
-  }));
+  return Array.from(inputs).map((input, index) => {
+    const parentSection = input.closest('[id^="sezione_"]') as HTMLElement;
+    const inputContainer = input.closest('[id]') as HTMLElement;
+    
+    return {
+      index,
+      type: input.type,
+      name: input.name,
+      id: input.id,
+      containerId: inputContainer?.id || input.id,
+      value: input.value,
+      disabled: input.disabled,
+      required: input.required,
+      placeholder: input.placeholder,
+      label: getFieldLabel(input),
+      order: getFieldOrder(inputContainer || input, parentSection),
+      element: input,
+      parentSection: parentSection?.id || null
+    };
+  });
+};
+
+const getFieldLabel = (input: HTMLInputElement): string => {
+  const label = input.labels?.[0] || document.querySelector(`label[for="${input.id}"]`);
+  if (label) return label.textContent?.trim() || '';
+  
+  if (input.getAttribute('aria-label')) return input.getAttribute('aria-label') || '';
+  if (input.placeholder) return input.placeholder;
+  
+  return input.name || input.id || 'Campo senza nome';
+};
+
+const getFieldOrder = (fieldElement: HTMLElement, parentSection: HTMLElement | null): number => {
+  if (!parentSection || !fieldElement) return 0;
+  
+  const cssOrder = fieldElement.style.order;
+  if (cssOrder) return parseInt(cssOrder, 10);
+  
+  const fieldsInSection = parentSection.querySelectorAll('input, textarea, select');
+  return Array.from(fieldsInSection).findIndex(field => {
+    const container = field.closest('[id]') || field;
+    return container === fieldElement || container.contains(fieldElement);
+  });
 };
 
 export const mapAllSections = () => {
@@ -98,7 +169,8 @@ export const mapAllSections = () => {
     order: section.style.order || index.toString(),
     inputCount: section.querySelectorAll('input, textarea, select').length,
     title: section.querySelector('h1, h2, h3, h4, h5, h6')?.textContent || 
-           section.querySelector('[variant="subtitle1"]')?.textContent || 'Senza titolo',
+           section.querySelector('[variant="subtitle1"]')?.textContent || 
+           section.querySelector('Typography')?.textContent || 'Senza titolo',
     element: section
   }));
 };
@@ -107,134 +179,123 @@ export const mapFormStructure = () => {
   const sections = mapAllSections();
   const inputs = mapAllInputs();
 
-  const sectionMap = sections.map(section => ({
+  return sections.map((section, sectionIndex) => ({
     id: section.id,
     title: section.title,
     visible: section.visible,
     order: section.order,
+    sectionIndex: sectionIndex,
     inputCount: section.inputCount,
-    fields: inputs.filter(i => i.parentSection === section.id).map(f => ({
-      id: f.id,
-      name: f.name,
-      type: f.type,
-      value: f.value,
-      disabled: f.disabled,
-      required: f.required,
-      placeholder: f.placeholder
-    }))
+    fields: inputs
+      .filter(i => i.parentSection === section.id)
+      .sort((a, b) => a.order - b.order)
+      .map((f, fieldIndex) => ({
+        id: f.id,
+        containerId: f.containerId,
+        name: f.name,
+        type: f.type,
+        value: f.value,
+        disabled: f.disabled,
+        required: f.required,
+        placeholder: f.placeholder,
+        label: f.label,
+        order: f.order,
+        fieldIndex: fieldIndex,
+        visible: isFieldVisible(f.containerId || f.id),
+        readOnly: isFieldReadOnly(f.containerId || f.id),
+        adminLocked: getFieldAdminLock(f.containerId || f.id)
+      }))
   }));
-
-  return sectionMap;
 };
 
-export const queryElements = (selector: string, filters?: {
-  visible?: boolean;
-  enabled?: boolean;
-  hasValue?: boolean;
-}) => {
-  const formContainer = document.querySelector('[aria-label="Registration Form"]') as HTMLElement;
-  if (!formContainer) return [];
-
-  const elements = Array.from(formContainer.querySelectorAll(selector)) as HTMLElement[];
-  if (!filters) return elements;
-
-  return elements.filter(el => {
-    if (filters.visible !== undefined) {
-      const isVisible = el.style.display !== 'none' && !el.hidden && el.offsetParent !== null;
-      if (isVisible !== filters.visible) return false;
-    }
-
-    if (filters.enabled !== undefined) {
-      const input = el as HTMLInputElement;
-      if (input.disabled === filters.enabled) return false;
-    }
-
-    if (filters.hasValue !== undefined) {
-      const input = el as HTMLInputElement;
-      const hasValue = input.value && input.value.trim() !== '';
-      if (hasValue !== filters.hasValue) return false;
-    }
-
-    return true;
-  });
-};
-
-export const getFormStats = () => {
-  const allElements = traverseAllElements();
-  const allInputs = mapAllInputs();
-  const allSections = mapAllSections();
-
-  return {
-    totalElements: allElements.length,
-    totalInputs: allInputs.length,
-    totalSections: allSections.length,
-    visibleInputs: allInputs.filter(input => !input.disabled).length,
-    filledInputs: allInputs.filter(input => input.value && input.value.trim() !== '').length,
-    visibleSections: allSections.filter(section => section.visible).length,
-    elements: allElements,
-    inputs: allInputs,
-    sections: allSections,
-    elementsByType: allElements.reduce((acc: Record<string, number>, el: any) => {
-      acc[el.tag] = (acc[el.tag] || 0) + 1;
-      return acc;
-    }, {})
-  };
-};
-
-// Funzioni di manipolazione DOM: visibilità, riordino, editabilità
+// === FUNZIONI DI MANIPOLAZIONE CAMPI ===
 export const hideField = (fieldId: string) => {
-  const element = document.getElementById(fieldId);
-  if (element) element.style.display = 'none';
+  const container = findFieldContainer(fieldId);
+  if (container) {
+    container.style.display = 'none';
+    console.log(`🙈 Hidden field: ${fieldId}`);
+  }
 };
 
 export const showField = (fieldId: string) => {
-  const element = document.getElementById(fieldId);
-  if (element) element.style.display = '';
+  const container = findFieldContainer(fieldId);
+  if (container) {
+    container.style.display = '';
+    console.log(`👁️ Shown field: ${fieldId}`);
+  }
+};
+
+export const hideFields = (fieldIds: string[]) => {
+  fieldIds.forEach(fieldId => hideField(fieldId));
+};
+
+export const showFields = (fieldIds: string[]) => {
+  fieldIds.forEach(fieldId => showField(fieldId));
 };
 
 export const makeFieldReadOnly = (fieldId: string) => {
-  const element = document.getElementById(fieldId);
-  if (element) {
-    const input = element.querySelector('input, textarea, select') as HTMLInputElement | null;
-    if (input) input.disabled = true;
-    element.style.opacity = '0.6';
+  const container = findFieldContainer(fieldId);
+  if (container) {
+    const input = container.querySelector('input, textarea, select') as HTMLInputElement | null;
+    if (input) {
+      input.disabled = true;
+      container.style.opacity = '0.6';
+      console.log(`🔒 Made field read-only: ${fieldId}`);
+    }
   }
 };
 
 export const makeFieldEditable = (fieldId: string) => {
-  const element = document.getElementById(fieldId);
-  if (element) {
-    const input = element.querySelector('input, textarea, select') as HTMLInputElement | null;
-    if (input) input.disabled = false;
-    element.style.opacity = '1';
+  const container = findFieldContainer(fieldId);
+  if (container) {
+    const input = container.querySelector('input, textarea, select') as HTMLInputElement | null;
+    if (input) {
+      input.disabled = false;
+      container.style.opacity = '1';
+      console.log(`✏️ Made field editable: ${fieldId}`);
+    }
   }
 };
 
-export const reorderField = (fieldId: string, order: number) => {
-  const element = document.getElementById(fieldId);
-  if (element) element.style.order = order.toString();
+export const makeFieldsReadOnly = (fieldIds: string[]) => {
+  fieldIds.forEach(fieldId => makeFieldReadOnly(fieldId));
 };
 
+export const makeFieldsEditable = (fieldIds: string[]) => {
+  fieldIds.forEach(fieldId => makeFieldEditable(fieldId));
+};
+
+export const reorderFieldsInSection = (sectionId: string, fieldOrder: string[]) => {
+  const section = document.getElementById(sectionId);
+  if (!section) return;
+  
+  fieldOrder.forEach((fieldId, index) => {
+    const fieldElement = section.querySelector(`#${fieldId}`) || 
+                        section.querySelector(`[id*="${fieldId}"]`);
+    if (fieldElement && fieldElement instanceof HTMLElement) {
+      fieldElement.style.order = index.toString();
+    }
+  });
+  
+  section.style.display = section.style.display || 'flex';
+  section.style.flexDirection = 'column';
+};
+
+// === FUNZIONI DI MANIPOLAZIONE SEZIONI ===
 export const reorderSections = (sectionOrder: string[]) => {
   const formContainer = document.querySelector('[aria-label="Registration Form"]') as HTMLElement | null;
   if (!formContainer) return;
   
-  // Applica l'ordine CSS a ogni sezione
   sectionOrder.forEach((sectionId, index) => {
     const section = document.getElementById(sectionId);
     if (section) {
       section.style.order = index.toString();
-      // Forza il re-render del layout
       section.style.display = section.style.display || 'flex';
     }
   });
   
-  // Assicura che il container supporti flexbox
   formContainer.style.display = 'flex';
   formContainer.style.flexDirection = 'column';
-  
-  // Debug: logga l'ordine applicato
-  console.log('Riordino applicato:', sectionOrder.map((id, idx) => `${id}: ${idx}`));
 };
 
 export const hideSections = (sectionIds: string[]) => {
@@ -287,60 +348,67 @@ export const showAllFields = () => {
 
 export const makeAllReadOnly = () => {
   const inputs = mapAllInputs();
-  inputs.forEach(i => {
-    const el = document.getElementById(i.id);
-    if (el) {
-      const input = el.querySelector('input, textarea, select') as HTMLInputElement | null;
-      if (input) input.disabled = true;
-      el.style.opacity = '0.6';
-    }
-  });
+  inputs.forEach(i => makeFieldReadOnly(i.id));
 };
 
 export const makeAllEditable = () => {
   const inputs = mapAllInputs();
-  inputs.forEach(i => {
-    const el = document.getElementById(i.id);
-    if (el) {
-      const input = el.querySelector('input, textarea, select') as HTMLInputElement | null;
-      if (input) input.disabled = false;
-      el.style.opacity = '1';
+  inputs.forEach(i => makeFieldEditable(i.id));
+};
+
+// === GESTIONE SINGOLI CAMPI ===
+export const toggleFieldVisibility = (fieldId: string) => {
+  const container = findFieldContainer(fieldId);
+  if (container) {
+    const isVisible = container.style.display !== 'none';
+    container.style.display = isVisible ? 'none' : '';
+    console.log(`🔀 Toggled field visibility: ${fieldId} -> ${isVisible ? 'hidden' : 'visible'}`);
+  }
+};
+
+export const toggleFieldReadOnly = (fieldId: string) => {
+  const container = findFieldContainer(fieldId);
+  if (container) {
+    const input = container.querySelector('input, textarea, select') as HTMLInputElement;
+    if (input) {
+      input.disabled = !input.disabled;
+      container.style.opacity = input.disabled ? '0.6' : '1';
+      console.log(`🔀 Toggled field read-only: ${fieldId} -> ${input.disabled ? 'read-only' : 'editable'}`);
     }
-  });
+  }
 };
 
-// === NUOVE FUNZIONI PER IL DIALOG ===
-
-export type SectionConfig = {
-  id: string;
-  title: string;
-  visible: boolean;
-  readOnly: boolean;
-  adminLocked: boolean;
-  order: number;
-};
-
-// Mappa la configurazione corrente del form per il dialog
-export const getCurrentFormConfig = (): SectionConfig[] => {
-  const sections = mapAllSections();
-  // Ordina le sezioni in base al loro ordine CSS effettivo
-  const sortedSections = sections.sort((a, b) => {
-    const orderA = Number(a.order) || a.index;
-    const orderB = Number(b.order) || b.index;
-    return orderA - orderB;
-  });
+export const toggleFieldAdminLock = (fieldId: string) => {
+  const currentLock = getFieldAdminLock(fieldId);
+  setFieldAdminLock(fieldId, !currentLock);
   
-  return sortedSections.map((section, index) => ({
-    id: section.id,
-    title: section.title,
-    visible: section.visible,
-    readOnly: isReadOnlySection(section.id),
-    adminLocked: getAdminLock(section.id),
-    order: index
-  }));
+  const container = findFieldContainer(fieldId);
+  if (container) {
+    if (!currentLock) {
+      container.style.border = '2px solid #ff5722';
+      container.style.borderRadius = '4px';
+      container.style.padding = '2px';
+    } else {
+      container.style.border = '';
+      container.style.borderRadius = '';
+      container.style.padding = '';
+    }
+    console.log(`🔀 Toggled field admin lock: ${fieldId} -> ${!currentLock ? 'locked' : 'unlocked'}`);
+  }
 };
 
-// Verifica se una sezione è read-only controllando i suoi input
+export const reorderField = (sectionId: string, fieldId: string, newOrder: number) => {
+  const section = document.getElementById(sectionId);
+  if (!section) return;
+  
+  const fieldContainer = findFieldContainer(fieldId);
+  if (fieldContainer && fieldContainer instanceof HTMLElement) {
+    fieldContainer.style.order = newOrder.toString();
+    console.log(`🔄 Reordered field: ${fieldId} -> order ${newOrder}`);
+  }
+};
+
+// === GESTIONE CONFIGURAZIONI ===
 const isReadOnlySection = (sectionId: string): boolean => {
   const section = document.getElementById(sectionId);
   if (!section) return false;
@@ -349,7 +417,6 @@ const isReadOnlySection = (sectionId: string): boolean => {
   return Array.from(inputs).every(input => input.disabled);
 };
 
-// Gestisce l'admin lock (salva in localStorage per semplicità)
 export const getAdminLock = (sectionId: string): boolean => {
   const locks = JSON.parse(localStorage.getItem('adminLocks') || '{}');
   return !!locks[sectionId];
@@ -365,32 +432,48 @@ export const setAdminLock = (sectionId: string, locked: boolean) => {
   localStorage.setItem('adminLocks', JSON.stringify(locks));
 };
 
-// Applica la configurazione dal dialog al DOM
+export const getCurrentFormConfig = (): SectionConfig[] => {
+  const sections = mapFormStructure();
+  const sortedSections = sections.sort((a, b) => {
+    const orderA = Number(a.order) || a.sectionIndex;
+    const orderB = Number(b.order) || b.sectionIndex;
+    return orderA - orderB;
+  });
+  
+  return sortedSections.map((section, index) => ({
+    id: section.id,
+    title: section.title,
+    visible: section.visible,
+    readOnly: isReadOnlySection(section.id),
+    adminLocked: getAdminLock(section.id),
+    order: index,
+    fields: section.fields || []
+  }));
+};
+
 export const applyFormConfig = (configs: SectionConfig[]) => {
-  // Ordina le sezioni
+  console.log('🔧 Applying form config:', configs);
+  
   const sortedSections = configs.slice().sort((a, b) => a.order - b.order);
   reorderSections(sortedSections.map(s => s.id));
 
-  // Applica visibilità, read-only e admin lock
   configs.forEach(config => {
-    // Visibilità
+    console.log(`📋 Processing section: ${config.id}`);
+    
     if (config.visible) {
       showSections([config.id]);
     } else {
       hideSections([config.id]);
     }
 
-    // Read-only
     if (config.readOnly) {
       makeSectionReadOnly(config.id);
     } else {
       makeSectionEditable(config.id);
     }
 
-    // Admin lock
     setAdminLock(config.id, config.adminLocked);
     
-    // Applica stile visivo per admin lock
     const section = document.getElementById(config.id);
     if (section) {
       if (config.adminLocked) {
@@ -401,44 +484,146 @@ export const applyFormConfig = (configs: SectionConfig[]) => {
         section.style.borderRadius = '';
       }
     }
+
+    if (config.fields && config.fields.length > 0) {
+      console.log(`  📝 Processing ${config.fields.length} fields for section ${config.id}`);
+      const sortedFields = config.fields.slice().sort((a, b) => a.order - b.order);
+      reorderFieldsInSection(config.id, sortedFields.map(f => f.containerId || f.id));
+
+      config.fields.forEach(field => {
+        const fieldId = field.containerId || field.id;
+        const fieldContainer = findFieldContainer(fieldId);
+        
+        console.log(`    🎯 Field ${field.id} (${fieldId}):`, fieldContainer ? 'Found' : 'NOT FOUND');
+        
+        if (fieldContainer) {
+          // Gestione visibilità campo
+          if (field.visible !== undefined) {
+            console.log(`      👁️ Setting visibility: ${field.visible}`);
+            fieldContainer.style.display = field.visible ? '' : 'none';
+          }
+
+          // Gestione read-only campo
+          if (field.readOnly !== undefined) {
+            console.log(`      🔒 Setting readOnly: ${field.readOnly}`);
+            const input = fieldContainer.querySelector('input, textarea, select') as HTMLInputElement;
+            if (input) {
+              input.disabled = field.readOnly;
+              fieldContainer.style.opacity = field.readOnly ? '0.6' : '1';
+            }
+          }
+
+          // Gestione admin lock campo
+          setFieldAdminLock(fieldId, field.adminLocked);
+          if (field.adminLocked) {
+            console.log(`      🛡️ Setting admin lock: true`);
+            fieldContainer.style.border = '2px solid #ff5722';
+            fieldContainer.style.borderRadius = '4px';
+            fieldContainer.style.padding = '2px';
+          } else {
+            fieldContainer.style.border = '';
+            fieldContainer.style.borderRadius = '';
+            fieldContainer.style.padding = '';
+          }
+        } else {
+          console.warn(`⚠️ Field container not found for ${field.id} (tried ID: ${fieldId})`);
+          
+          // Debugging: mostra elementi simili
+          const similarElements = document.querySelectorAll(`[id*="${field.id}"], [name="${field.id}"]`);
+          if (similarElements.length > 0) {
+            console.log(`🔍 Found ${similarElements.length} similar elements:`, 
+              Array.from(similarElements).map(el => ({ 
+                id: (el as HTMLElement).id, 
+                name: (el as HTMLInputElement).name,
+                className: el.className 
+              }))
+            );
+          }
+        }
+      });
+    }
   });
+  
+  console.log('✅ Form config application completed');
 };
 
-// Salva configurazione completa
-export const saveFormConfiguration = (name: string): string => {
-  const config = {
-    name,
-    timestamp: new Date().toISOString(),
-    sections: getCurrentFormConfig()
+// === FUNZIONI DI DEBUG ===
+export const debugFormStructure = () => {
+  console.log('🔍 DEBUG: Analyzing form structure...');
+  
+  // Trova il form container
+  const formContainer = document.querySelector('[aria-label="Registration Form"]') as HTMLElement;
+  console.log('📋 Form container:', formContainer ? 'Found' : 'NOT FOUND');
+  
+  if (!formContainer) {
+    console.log('⚠️ Form container not found. Looking for alternative selectors...');
+    const forms = document.querySelectorAll('form');
+    console.log(`Found ${forms.length} form elements:`, forms);
+    return;
+  }
+  
+  // Trova tutte le sezioni
+  const sections = formContainer.querySelectorAll('[id^="sezione_"]');
+  console.log(`📁 Found ${sections.length} sections:`);
+  
+  sections.forEach((section, index) => {
+    const sectionElement = section as HTMLElement;
+    console.log(`  ${index + 1}. Section ID: ${sectionElement.id}`);
+    console.log(`     Visible: ${sectionElement.style.display !== 'none'}`);
+    
+    // Trova tutti i campi nella sezione
+    const fields = sectionElement.querySelectorAll('input, textarea, select');
+    console.log(`     Fields: ${fields.length}`);
+    
+    fields.forEach((field, fieldIndex) => {
+      const fieldElement = field as HTMLElement;
+      const container = fieldElement.closest('[id]') as HTMLElement;
+      console.log(`       ${fieldIndex + 1}. Field ID: ${fieldElement.id}`);
+      console.log(`          Container ID: ${container?.id || 'No container'}`);
+      console.log(`          Type: ${fieldElement.tagName} ${(field as HTMLInputElement).type || ''}`);
+      console.log(`          Name: ${(field as HTMLInputElement).name || 'No name'}`);
+      console.log(`          Visible: ${fieldElement.style.display !== 'none' && container?.style.display !== 'none'}`);
+      console.log(`          Disabled: ${(field as HTMLInputElement).disabled}`);
+    });
+  });
+  
+  return {
+    formContainer,
+    sectionsCount: sections.length,
+    sections: Array.from(sections).map(s => s.id)
   };
-  
-  const configId = `form_config_${Date.now()}`;
-  localStorage.setItem(configId, JSON.stringify(config));
-  
-  // Salva anche l'elenco delle configurazioni
-  const configList = JSON.parse(localStorage.getItem('formConfigList') || '[]');
-  configList.push({ id: configId, name, timestamp: config.timestamp });
-  localStorage.setItem('formConfigList', JSON.stringify(configList));
-  
-  return configId;
 };
 
-// Carica configurazione
-export const loadFormConfiguration = (configId: string): SectionConfig[] | null => {
-  const configData = localStorage.getItem(configId);
-  if (!configData) return null;
+export const debugFieldById = (fieldId: string) => {
+  console.log(`🎯 DEBUG: Analyzing field "${fieldId}"...`);
   
-  try {
-    const config = JSON.parse(configData);
-    return config.sections || [];
-  } catch (e) {
-    console.error('Errore nel caricamento della configurazione:', e);
+  const element = document.getElementById(fieldId);
+  if (!element) {
+    console.log(`❌ Element with ID "${fieldId}" not found`);
+    
+    // Cerca elementi simili
+    const similar = document.querySelectorAll(`[id*="${fieldId}"]`);
+    if (similar.length > 0) {
+      console.log(`🔍 Found ${similar.length} similar elements:`);
+      similar.forEach((el, i) => console.log(`  ${i + 1}. ${(el as HTMLElement).id}`));
+    }
     return null;
   }
+  
+  console.log(`✅ Element found:`, element);
+  console.log(`   Tag: ${element.tagName}`);
+  console.log(`   ID: ${element.id}`);
+  console.log(`   Display: ${element.style.display || 'default'}`);
+  console.log(`   Opacity: ${element.style.opacity || 'default'}`);
+  
+  // Se è un input container, cerca l'input interno
+  const input = element.querySelector('input, textarea, select') as HTMLInputElement;
+  if (input) {
+    console.log(`   Input found:`, input);
+    console.log(`     Type: ${input.type}`);
+    console.log(`     Name: ${input.name}`);
+    console.log(`     Disabled: ${input.disabled}`);
+  }
+  
+  return { element, input };
 };
-
-// Lista configurazioni salvate
-export const getFormConfigurationList = () => {
-  return JSON.parse(localStorage.getItem('formConfigList') || '[]');
-};
-
