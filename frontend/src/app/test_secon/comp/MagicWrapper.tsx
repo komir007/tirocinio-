@@ -6,12 +6,19 @@ import { ChildrenInspector } from './ChildrenInspector';
 
 export default function MagicWrapper({ children }: { children: React.ReactNode }) {
   const { mappedChildren, modifyChild } = useChildrenMapper(children);
-  
+  const arr = React.Children.toArray(children);
+  console.log('arrrrrrrrrrrrrrrrrr',arr);
+  console.log('mappedChildren', mappedChildren);
+
+
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {mappedChildren}
-      </div>
+      
+       
+      
+      <div>{mappedChildren}</div>
+
+     
 
       <ChildrenInspector children={children} />
 

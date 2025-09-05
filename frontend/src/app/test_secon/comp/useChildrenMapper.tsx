@@ -15,6 +15,7 @@ export function useChildrenMapper(children: React.ReactNode) {
     
     // Applica ordinamento se specificato
     const indexed = arr.map((child, i) => ({ child, originalIndex: i }));
+    
     indexed.sort((a, b) => {
       const orderA = mods.get(a.originalIndex)?.newOrder ?? a.originalIndex;
       const orderB = mods.get(b.originalIndex)?.newOrder ?? b.originalIndex;
@@ -25,8 +26,11 @@ export function useChildrenMapper(children: React.ReactNode) {
       const mod = mods.get(originalIndex);
       if (!mod) return child;
       
+      if (mod.newOrder)
+        return null; // L'ordinamento è già stato gestito
+  
       if (mod.hide) return null;
-      
+
       if (React.isValidElement(child)) {
         const newProps: any = { ...mod.addProps };
         
