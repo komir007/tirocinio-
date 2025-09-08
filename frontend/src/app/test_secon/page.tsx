@@ -1,25 +1,48 @@
-"use client";
-import React from "react";
-import { Box, Button, Chip, TextField } from "@mui/material";
-import { useChildrenMapper } from "./comp/useChildrenMapper";
-import { ChildrenInspector } from "./comp/ChildrenInspector";
-import MagicWrapper from "./comp/MagicWrapper";
+'use client';
+import React from 'react';
+import { Box, Button, Chip, TextField } from '@mui/material';
+
+import MagicWrapper from '@/app/test_secon/comp/MagicWrapper';
 
 export default function Demo() {
   return (
     <MagicWrapper>
-      <Box key="from_demo" component="form">
-        <Box key="sezione_1">
-          <TextField key="primo_input" label="Primo Input" size="small" />
-          <Button key="primo_bottone">Primo</Button>
+      <Box
+        component="form"
+        key="form"
+        m={10}
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
+      >
+        <Box
+          key={"sezione_1"}
+          m={10}
+          display={"flex"}
+          flexDirection={"column"}
+          justifyContent={"center"}
+          alignItems={"center"}
+          gap={2}
+        >
+          <TextField key="field_1" label="Primo" />
+          <TextField key="field_2" label="Secondo" />
         </Box>
-        <Box key="sezione_2">
-          <TextField key="terzo_input" label="Terzo" size="small" />
-          <Button key="quarto_bottone" variant="outlined">
-            Quarto
-          </Button>
+        <Box
+          key={"sezione_2"}
+          m={10}
+          display={"flex"}
+          flexDirection={"column"}
+          justifyContent={"center"}
+          alignItems={"center"}
+          gap={2}
+        >
+          <TextField key="field_3" label="Terzo" size="small" />
+          <TextField key="field_4" variant="outlined" label="Quarto" />
         </Box>
       </Box>
     </MagicWrapper>
   );
 }
+
+

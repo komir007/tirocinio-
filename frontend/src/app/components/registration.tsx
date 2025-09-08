@@ -29,6 +29,7 @@ import {
   applyFormConfig,
   SectionConfig,
 } from "./Custom_form_util";
+import MagicWrapper from "../test_secon/comp/MagicWrapper";
 
 export default function Registration() {
   const authContext = useContext(AuthContext);
@@ -72,8 +73,7 @@ export default function Registration() {
     const token = localStorage.getItem("accessToken");
     try {
       const res = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"
         }/users`,
         {
           method: "POST",
@@ -124,160 +124,162 @@ export default function Registration() {
           flexDirection: "column",
         }}
       >
-        <Box
-          aria-label="Registration Form"
-          component="form"
-          onSubmit={handleSubmit}
-          display="flex"
-          flexDirection="column"
-          flexGrow={1}
-        >
+        <MagicWrapper>
           <Box
-            id="sezione_anagrafica"
-            key="sezione_anagrafica"
+            aria-label="Registration Form"
+            component="form"
+            onSubmit={handleSubmit}
             display="flex"
             flexDirection="column"
-            gap={2}
-            m={2}
+            flexGrow={1}
           >
-            <Typography variant="subtitle1">
-              Informazioni anagrafiche
-            </Typography>
             <Box
-              key="1"
+              id="sezione_anagrafica"
+              key="sezione_anagrafica"
               display="flex"
-              flexDirection={{ xs: "column", sm: "row" }}
-              width={{ xs: "100%", sm: "50%" }}
+              flexDirection="column"
               gap={2}
-              sx={{ display: "flex", flexDirection: "row" }} // Per supportare order
+              m={2}
             >
-              <Box id="field-name-box">
-                <TextField
-                  id="f-name"
-                  name="name"
-                  label="Nome"
-                  value={form.name}
-                  onChange={handleChange}
-                  required
-                  fullWidth
-                  sx={{
-                    flex: 1,
-                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                  }}
-                />
-              </Box>
-              <Box id="field-cognome-box">
-                <TextField
-                  id="f-cognome"
-                  name="cognome"
-                  label="Cognome"
-                  //value={}
-                  //onChange={handleChange}
-                  required
-                  fullWidth
-                  sx={{
-                    flex: 1,
-                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                  }}
-                />
-              </Box>
-            </Box>
-            <Divider />
-          </Box>
-
-          <Box
-            id="sezione_accesso"
-            key="sezione_accesso"
-            display="flex"
-            flexDirection="column"
-            gap={2}
-            m={2}
-          >
-            <Typography variant="subtitle1">Accesso</Typography>
-            <Box
-              key="2"
-              display="flex"
-              flexDirection={{ xs: "column", sm: "row" }}
-              gap={2}
-              sx={{ display: "flex", flexDirection: "row" }} // Per supportare order
-            >
-              <Box id="field-email-box">
-                <TextField
-                  id="f-email"
-                  name="email"
-                  label="Email"
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  required
-                  fullWidth
-                  sx={{
-                    flex: 1,
-                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                  }}
-                />
-              </Box>
-              <Box id="field-password-box">
-                <TextField
-                  id="f-password"
-                  name="password"
-                  label="Password"
-                  type="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  required
-                  fullWidth
-                  sx={{
-                    flex: 1,
-                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                  }}
-                />
-              </Box>
-            </Box>
-            <Divider />
-          </Box>
-
-          <Box
-            m={2}
-            id="sezione_ruolo"
-            key="sezione_ruolo"
-            display="flex"
-            flexDirection="column"
-            gap={2}
-          >
-            <Typography variant="subtitle1">Ruolo</Typography>
-            <Box
-              display="flex"
-              flexDirection={{ xs: "column", sm: "row" }}
-              width={{ xs: "100%", sm: "50%" }}
-              gap={2}
-            >
-              {!isAgent && (
-                <Box width="50%" id="field-role-box">
+              <Typography variant="subtitle1">
+                Informazioni anagrafiche
+              </Typography>
+              <Box
+                key="1"
+                display="flex"
+                flexDirection={{ xs: "column", sm: "row" }}
+                width={{ xs: "100%", sm: "50%" }}
+                gap={2}
+                sx={{ display: "flex", flexDirection: "row" }} // Per supportare order
+              >
+                <Box id="field-name-box">
                   <TextField
-                    id="f-role"
-                    name="role"
-                    label="Ruolo"
-                    select
-                  value={form.role}
-                  onChange={handleChange}
-                  required
-                  fullWidth
-                  sx={{
-                    flex: 1,
-                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                  }}
-                >
-                  <MenuItem value="admin">Admin</MenuItem>
-                  <MenuItem value="agent">Agent</MenuItem>
-                  <MenuItem value="client">Client</MenuItem>
-                </TextField>
+                    id="f-name"
+                    name="name"
+                    label="Nome"
+                    value={form.name}
+                    onChange={handleChange}
+                    required
+                    fullWidth
+                    sx={{
+                      flex: 1,
+                      "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                    }}
+                  />
                 </Box>
-              )}
+                <Box id="field-cognome-box">
+                  <TextField
+                    id="f-cognome"
+                    name="cognome"
+                    label="Cognome"
+                    //value={}
+                    //onChange={handleChange}
+                    required
+                    fullWidth
+                    sx={{
+                      flex: 1,
+                      "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                    }}
+                  />
+                </Box>
+              </Box>
+              <Divider />
             </Box>
-            <Divider />
+
+            <Box
+              id="sezione_accesso"
+              key="sezione_accesso"
+              display="flex"
+              flexDirection="column"
+              gap={2}
+              m={2}
+            >
+              <Typography variant="subtitle1">Accesso</Typography>
+              <Box
+                key="2"
+                display="flex"
+                flexDirection={{ xs: "column", sm: "row" }}
+                gap={2}
+                sx={{ display: "flex", flexDirection: "row" }} // Per supportare order
+              >
+                <Box id="field-email-box">
+                  <TextField
+                    id="f-email"
+                    name="email"
+                    label="Email"
+                    type="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    required
+                    fullWidth
+                    sx={{
+                      flex: 1,
+                      "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                    }}
+                  />
+                </Box>
+                <Box id="field-password-box">
+                  <TextField
+                    id="f-password"
+                    name="password"
+                    label="Password"
+                    type="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    required
+                    fullWidth
+                    sx={{
+                      flex: 1,
+                      "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                    }}
+                  />
+                </Box>
+              </Box>
+              <Divider />
+            </Box>
+
+            <Box
+              m={2}
+              id="sezione_ruolo"
+              key="sezione_ruolo"
+              display="flex"
+              flexDirection="column"
+              gap={2}
+            >
+              <Typography variant="subtitle1">Ruolo</Typography>
+              <Box
+                display="flex"
+                flexDirection={{ xs: "column", sm: "row" }}
+                width={{ xs: "100%", sm: "50%" }}
+                gap={2}
+              >
+                {!isAgent && (
+                  <Box width="50%" id="field-role-box">
+                    <TextField
+                      id="f-role"
+                      name="role"
+                      label="Ruolo"
+                      select
+                      value={form.role}
+                      onChange={handleChange}
+                      required
+                      fullWidth
+                      sx={{
+                        flex: 1,
+                        "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                      }}
+                    >
+                      <MenuItem value="admin">Admin</MenuItem>
+                      <MenuItem value="agent">Agent</MenuItem>
+                      <MenuItem value="client">Client</MenuItem>
+                    </TextField>
+                  </Box>
+                )}
+              </Box>
+              <Divider />
+            </Box>
           </Box>
-        </Box>
+        </MagicWrapper>
         <Divider />
 
         <Divider />
