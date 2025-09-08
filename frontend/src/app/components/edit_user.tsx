@@ -13,6 +13,7 @@ import { AuthContext } from "./Authcontext";
 import { useContext } from "react";
 
 import { useSearchParams } from "next/navigation";
+import MagicWrapper from "../test_secon/comp/MagicWrapper";
 
 export default function Edit_user() {
   const searchParams = useSearchParams();
@@ -106,8 +107,11 @@ export default function Edit_user() {
           flexDirection: "column",
         }}
       >
+        <MagicWrapper>
         <Box
           component="form"
+          aria-label="form_Edit_user"
+          key="form_Edit_user"
           onSubmit={handleSubmit}
           display="flex"
           flexDirection={{ xs: "column", sm: "row" }}
@@ -118,6 +122,7 @@ export default function Edit_user() {
           <TextField
             name="name"
             label="Nome"
+            key="form_name"
             value={form.name}
             onChange={handleChange}
             required
@@ -127,6 +132,7 @@ export default function Edit_user() {
           <TextField
             name="email"
             label="Email"
+            key="form_email"
             type="email"
             value={form.email}
             onChange={handleChange}
@@ -135,6 +141,7 @@ export default function Edit_user() {
             sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
           />
           <TextField
+            key="form_password"  
             name="password"
             label="Password"
             type="password"
@@ -147,6 +154,7 @@ export default function Edit_user() {
           {!isAgent && (
             <TextField
               name="role"
+              key="form_role"
               label="Ruolo"
               select
               value={form.role}
@@ -161,6 +169,7 @@ export default function Edit_user() {
             </TextField>
           )}
         </Box>
+        </MagicWrapper>
         <Box display="flex" justifyContent="flex-end" gap={2}>
           <Button variant="outlined" color="primary" onClick={handleCancel}>
             Annulla
