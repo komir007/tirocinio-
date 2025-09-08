@@ -13,22 +13,8 @@ import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import { Divider, IconButton } from "@mui/material";
 import { Settings as SettingsIcon } from "@mui/icons-material";
-import CustomFormDialog from "./Custom_form_dialog";
-import {
-  reorderSections,
-  hideSections,
-  showSections,
-  hideFields,
-  showFields,
-  makeFieldsReadOnly,
-  makeFieldsEditable,
-  makeSectionReadOnly,
-  makeSectionEditable,
-  reorderFieldsInSection,
-  getCurrentFormConfig,
-  applyFormConfig,
-  SectionConfig,
-} from "./Custom_form_util";
+
+
 import MagicWrapper from "../test_secon/comp/MagicWrapper";
 
 export default function Registration() {
@@ -44,21 +30,7 @@ export default function Registration() {
     createdBy: by || "",
   });
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
-  const [dialogOpen, setDialogOpen] = React.useState(false);
   const router = useRouter();
-
-  const handleOpenDialog = () => {
-    setDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-  };
-
-  const handleConfigChange = (newSections: SectionConfig[]) => {
-    applyFormConfig(newSections);
-    setDialogOpen(false);
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -126,7 +98,8 @@ export default function Registration() {
       >
         <MagicWrapper>
           <Box
-            aria-label="Registration Form"
+            aria-label="form_Registration"
+            key="form_Registration"
             component="form"
             onSubmit={handleSubmit}
             display="flex"
@@ -152,9 +125,10 @@ export default function Registration() {
                 gap={2}
                 sx={{ display: "flex", flexDirection: "row" }} // Per supportare order
               >
-                <Box id="field-name-box">
+                
                   <TextField
                     id="f-name"
+                    key="field-name"
                     name="name"
                     label="Nome"
                     value={form.name}
@@ -166,10 +140,11 @@ export default function Registration() {
                       "& .MuiOutlinedInput-root": { borderRadius: 2 },
                     }}
                   />
-                </Box>
-                <Box id="field-cognome-box">
+                
+                
                   <TextField
                     id="f-cognome"
+                    key="field-cognome"
                     name="cognome"
                     label="Cognome"
                     //value={}
@@ -181,7 +156,7 @@ export default function Registration() {
                       "& .MuiOutlinedInput-root": { borderRadius: 2 },
                     }}
                   />
-                </Box>
+                
               </Box>
               <Divider />
             </Box>
@@ -202,9 +177,10 @@ export default function Registration() {
                 gap={2}
                 sx={{ display: "flex", flexDirection: "row" }} // Per supportare order
               >
-                <Box id="field-email-box">
+                
                   <TextField
                     id="f-email"
+                    key="field-email"
                     name="email"
                     label="Email"
                     type="email"
@@ -217,10 +193,11 @@ export default function Registration() {
                       "& .MuiOutlinedInput-root": { borderRadius: 2 },
                     }}
                   />
-                </Box>
-                <Box id="field-password-box">
+                
+                
                   <TextField
                     id="f-password"
+                    key="field-password"
                     name="password"
                     label="Password"
                     type="password"
@@ -233,7 +210,7 @@ export default function Registration() {
                       "& .MuiOutlinedInput-root": { borderRadius: 2 },
                     }}
                   />
-                </Box>
+                
               </Box>
               <Divider />
             </Box>
@@ -254,9 +231,10 @@ export default function Registration() {
                 gap={2}
               >
                 {!isAgent && (
-                  <Box width="50%" id="field-role-box">
+                  
                     <TextField
                       id="f-role"
+                      key="field-role"
                       name="role"
                       label="Ruolo"
                       select
@@ -273,7 +251,7 @@ export default function Registration() {
                       <MenuItem value="agent">Agent</MenuItem>
                       <MenuItem value="client">Client</MenuItem>
                     </TextField>
-                  </Box>
+                  
                 )}
               </Box>
               <Divider />
@@ -285,9 +263,6 @@ export default function Registration() {
         <Divider />
 
         <Box display="flex" p={2} justifyContent="flex-end" gap={2}>
-          <IconButton onClick={handleOpenDialog} aria-label="settings">
-            <SettingsIcon />
-          </IconButton>
           <Button variant="outlined" color="primary" onClick={handleCancel}>
             Annulla
           </Button>
@@ -311,13 +286,6 @@ export default function Registration() {
           Registrazione avvenuta con successo!
         </Alert>
       </Snackbar>
-
-      <CustomFormDialog
-        open={dialogOpen}
-        onClose={handleCloseDialog}
-        sections={getCurrentFormConfig()}
-        onChange={handleConfigChange}
-      />
     </Box>
   );
 }
