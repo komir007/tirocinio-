@@ -39,6 +39,7 @@ export default function Demo() {
         >
           <TextField key="field_3" label="Terzo" size="small" />
           <TextField key="field_4" variant="outlined" label="Quarto" />
+          <TextField key="field_5" variant="filled" label="Quinto" />
         </Box>
       </Box>
     </MagicWrapper>

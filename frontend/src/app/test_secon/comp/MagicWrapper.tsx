@@ -23,13 +23,13 @@ type TNode = {
 };
 
 export default function MagicWrapper({ children }: { children: ReactNode }) {
-  const [ovr, setOvr] = useState<Record<string, Meta>>({});
   const authContext = useContext(AuthContext);
   const userId = authContext?.user?.id;
-
+  
   // saved snapshot serialized for dirty check
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [ovr, setOvr] = useState<Record<string, Meta>>({});
 
   // Build a simple tree from children, mixing defaults (props) with overrides
   const tree = useMemo((): TNode[] => {
@@ -38,9 +38,7 @@ export default function MagicWrapper({ children }: { children: ReactNode }) {
       return arr.map<TNode>((node, idx) => {
         const isEl = React.isValidElement(node);
         const el = isEl ? node : null;
-        const rawKey = isEl
-          ? el!.key ?? `${parentKey}-${idx}`
-          : `${parentKey}-${idx}`;
+        const rawKey = isEl ? el!.key ?? `${parentKey}-${idx}` : `${parentKey}-${idx}`;
         const key = String(rawKey).replace(/^\.\$?/, "");
         const props: any = isEl ? el!.props || {} : {};
         const def: Meta = {
@@ -143,6 +141,8 @@ export default function MagicWrapper({ children }: { children: ReactNode }) {
       });
     };
     walk(tree, 0);
+    console.log("Flat list:", out);
+    console.log("rendered:", render(tree));
     return out;
   }, [tree]);
 
@@ -305,6 +305,7 @@ export default function MagicWrapper({ children }: { children: ReactNode }) {
         </div>
       </div>
       {render(tree)}
+      
     </div>
   );
 }
