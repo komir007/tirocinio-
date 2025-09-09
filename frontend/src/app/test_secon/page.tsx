@@ -37,7 +37,7 @@ export default function Demo() {
           alignItems={"center"}
           gap={2}
         >
-          <TextField key="field_3" label="Terzo" size="small" />
+          <TextField key="field_3" variant="standard" label="Terzo"  />
           <TextField key="field_4" variant="outlined" label="Quarto" />
           <TextField key="field_5" variant="filled" label="Quinto" />
         </Box>

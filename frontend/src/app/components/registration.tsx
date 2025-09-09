@@ -20,6 +20,7 @@ import MagicWrapper from "../test_secon/comp/MagicWrapper";
 export default function Registration() {
   const authContext = useContext(AuthContext);
   const by = authContext?.user?.email;
+  const parentId = authContext?.user?.parentId;
   const isAgent = authContext?.user?.role?.toLowerCase() === "agent";
 
   const [form, setForm] = React.useState({
@@ -96,6 +97,9 @@ export default function Registration() {
           flexDirection: "column",
         }}
       >
+        <Box>
+          {parentId && <Typography variant="body2">Creato da: {parentId}</Typography>}
+        </Box>
         <MagicWrapper>
           <Box
             aria-label="form_Registration"

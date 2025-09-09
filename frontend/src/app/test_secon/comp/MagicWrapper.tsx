@@ -8,6 +8,9 @@ import React, {
   useContext,
 } from "react";
 import { AuthContext } from "../../components/Authcontext";
+import MagicSettingsDialog from './MagicSettingsDialog';
+import IconButton from '@mui/material/IconButton';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 type Meta = {
   visible: boolean;
@@ -40,7 +43,7 @@ export default function MagicWrapper({ children }: { children: ReactNode }) {
         const el = isEl ? node : null;
         const rawKey = isEl ? el!.key ?? `${parentKey}-${idx}` : `${parentKey}-${idx}`;
         const key = String(rawKey).replace(/^\.\$?/, "");
-        const props: any = isEl ? el!.props || {} : {};
+        const props: any = isEl ? el!.props ?? {} : {};
         const def: Meta = {
           visible: typeof props.visible === "boolean" ? props.visible : true,
           order: typeof props.order === "number" ? props.order : idx,
@@ -75,43 +78,26 @@ export default function MagicWrapper({ children }: { children: ReactNode }) {
       if (!n.isEl) return n.node;
       const childOut = render(n.children);
 
-      // Prepare extra props to apply when a node is disabled.
+      // Simple disabled handling
       const extra: any = {
         "data-disabled": n.meta.disabled ? "true" : "false",
-        "aria-disabled": n.meta.disabled ? true : undefined,
+        "aria-disabled": n.meta.disabled || undefined,
       };
 
       if (n.meta.disabled) {
         const el = n.node as ReactElement;
-        const type = el.type;
+        const type = el?.type;
         const isIntrinsic = typeof type === "string";
 
-        // For native form controls, set the disabled prop so they become non-interactable
-        // and are treated correctly by the browser (focus, keyboard, etc.).
-        if (isIntrinsic) {
-          const tag = type as string;
-          if (
-            [
-              "input",
-              "select",
-              "textarea",
-              "button",
-              "fieldset",
-              "option",
-              "optgroup",
-            ].includes(tag)
-          ) {
-            extra.disabled = true;
-          }
-        }
-
-        // Merge existing style with visual disabled styles (lighter tone) and prevent pointer events
         const existingStyle = (el.props as any)?.style || {};
-        // For intrinsic form controls we rely on the native `disabled` attribute; still apply reduced opacity.
-        // For custom components, also add pointerEvents: 'none' so they become non-interactive.
-        extra.style = isIntrinsic
-          ? { ...existingStyle, opacity: 0.6 }
-          : { ...existingStyle, opacity: 0.6, pointerEvents: "none" };
+        extra.style = { ...existingStyle, opacity: 0.6 };
+
+        if (!isIntrinsic) {
+          extra.style.pointerEvents = "none";
+        } else {
+          const nativeControls = ["input", "select", "textarea", "button", "fieldset", "option", "optgroup"];
+          if (nativeControls.includes(type as string)) extra.disabled = true;
+        }
       }
 
       return React.cloneElement(
@@ -119,7 +105,7 @@ export default function MagicWrapper({ children }: { children: ReactNode }) {
         {
           ...extra,
           children: childOut,
-        } as any
+        }
       );
     });
   };
@@ -224,10 +210,7 @@ export default function MagicWrapper({ children }: { children: ReactNode }) {
   }, [userId, formKey]);
 
   const update = (key: string, patch: Partial<Meta>) =>
-    setOvr((p) => ({
-      ...p,
-      [key]: { ...(p[key] || ({} as Meta)), ...patch } as Meta,
-    }));
+    setOvr((p) => ({...p, [key]: { ...(p[key] ?? {}), ...patch }}));
 
   return (
     <div>
@@ -243,68 +226,24 @@ export default function MagicWrapper({ children }: { children: ReactNode }) {
       >
         <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
           <strong>Tree</strong>
-          <div style={{display: 'flex', gap: 8, marginLeft: 8, alignItems: 'center'}}>
-            <button onClick={saveToLocal} title="Salva le modifiche per utente e form">Salva</button>
-            <button onClick={loadFromLocal} title="Carica il salvataggio salvato">Carica</button>
-            <button
-              onClick={() => {
-                // conferma semplice per evitare cancellazioni accidentali
-                const ok = typeof window !== 'undefined' ? window.confirm('Resettare tutte le personalizzazioni per questo form?') : true;
-                if (!ok) return;
-                try {
-                  localStorage.removeItem(storageKey(userId));
-                } catch (e) {
-                  // ignore
-                }
-                setOvr({});
-                setSavedSnapshot(null);
-                setIsSaved(false);
-                // eslint-disable-next-line no-console
-                console.log('MagicWrapper: reset overrides and removed saved entry', storageKey(userId));
-              }}
-              title="Resetta le personalizzazioni (cancella anche il salvataggio)">
-              Reset
-            </button>
-            <span style={{fontSize: 12, color: isSaved ? 'green' : 'crimson'}}>
-              {isSaved ? 'Salvato' : 'Modifiche non salvate'}
-            </span>
-          </div>
-        </div>
-        <div style={{ maxHeight: 200, overflow: "auto", marginTop: 6 }}>
-          {list.map((r) => (
-            <div
-              key={`ctl-${r.key}`}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "4px 0",
-              }}
-            >
-              <span style={{ paddingLeft: r.depth * 12 }}>{r.key}</span>
-              <input
-                type="number"
-                value={Number.isFinite(r.meta.order) ? r.meta.order : 0}
-                onChange={(e) =>
-                  update(r.key, { order: parseInt(e.target.value || "0", 10) })
-                }
-                style={{ width: 56 }}
-              />
-              <button
-                onClick={() => update(r.key, { visible: !r.meta.visible })}
-              >
-                {r.meta.visible ? "👁️" : "🚫"}
-              </button>
-              <button
-                onClick={() => update(r.key, { disabled: !r.meta.disabled })}
-              >
-                {r.meta.disabled ? "🔒" : "✏️"}
-              </button>
-            </div>
-          ))}
+          <MagicSettingsDialog
+            ovr={ovr}
+            setOvr={setOvr}
+            savedSnapshot={savedSnapshot}
+            setSavedSnapshot={setSavedSnapshot}
+            isSaved={isSaved}
+            setIsSaved={setIsSaved}
+            saveToLocal={saveToLocal}
+            loadFromLocal={loadFromLocal}
+            storageKey={storageKey}
+            userId={userId}
+            role={authContext?.role}
+            update={update}
+            list={list}
+          />
         </div>
       </div>
-      {render(tree)}
+      {render(children)}
       
     </div>
   );

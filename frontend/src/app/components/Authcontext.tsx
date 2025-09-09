@@ -98,6 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         name: decodedPayload.name || "Utente",
         email: decodedPayload.email || "email@example.com",
         role: decodedPayload.role as Role,
+        parentId: decodedPayload.parentId as string | undefined,
       };
       setUser(currentUser);
       setRole(currentUser.role);
@@ -130,6 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           name: decodedPayload.name || "Utente",
           email: decodedPayload.email || "email@example.com",
           role: decodedPayload.role as Role,
+          parentId: decodedPayload.parentId as string | undefined,
         };
         setUser(loggedInUser);
         setRole(loggedInUser.role);

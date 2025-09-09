@@ -8,6 +8,7 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  parentId?: string; // ID dell'utente genitore, se applicabile
 }
 
 /**

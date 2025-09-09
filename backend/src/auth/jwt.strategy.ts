@@ -15,11 +15,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: any) {
     const user = await this.usersService.findOne(payload.sub);
+    const user_parent = payload.parentId ? await this.usersService.findOneByEmail(payload.createdBy) : null;
     if (!user) {
       throw new UnauthorizedException();
     }
     //console.log('Inside JWT Strategy Validate');
     //console.log(payload);
-    return { userId: payload.sub, email: payload.email, role: payload.role, }; // Questo sarà disponibile in req.user
+    return { userId: payload.sub, email: payload.email, role: payload.role, parentId: user_parent?.id }; // Questo sarà disponibile in req.user
   }
 }
