@@ -243,7 +243,7 @@ export default function MagicWrapper({ children }: { children: ReactNode }) {
           />
         </div>
       </div>
-      {render(children)}
+      {render(tree)}
       
     </div>
   );
