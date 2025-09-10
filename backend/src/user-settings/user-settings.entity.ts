@@ -1,10 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Unique } from 'typeorm';
 import { User } from '../user/user.entity';
+import { UniqueMetadata } from 'typeorm/metadata/UniqueMetadata.js';
 
 @Entity('user_settings')
 export class UserSettings {
+  @Unique(['id', 'userId', 'settingname'])
   @PrimaryGeneratedColumn()
   id: number;
+  
+  @Column({ nullable: false })
+  settingname: string;
 
   @Column({ nullable: false }) // CORRETTO: Esplicita che non può essere null
   userId: number;
@@ -17,7 +22,7 @@ export class UserSettings {
   customizationConfig: any;
 
   @Column('json', { nullable: true })
-  adminFieldRestrictions: any; // Configurazioni admin sui campi che gli agent non possono editare
+  adminRestrictions: any; // Configurazioni admin sui campi che gli agent non possono editare
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;

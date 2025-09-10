@@ -14,7 +14,6 @@ import Alert from "@mui/material/Alert";
 import { Divider, IconButton } from "@mui/material";
 import { Settings as SettingsIcon } from "@mui/icons-material";
 
-
 import MagicWrapper from "../test_secon/comp/MagicWrapper";
 
 export default function Registration() {
@@ -46,7 +45,8 @@ export default function Registration() {
     const token = localStorage.getItem("accessToken");
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"
+        `${
+          process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"
         }/users`,
         {
           method: "POST",
@@ -97,9 +97,6 @@ export default function Registration() {
           flexDirection: "column",
         }}
       >
-        <Box>
-          {parentId && <Typography variant="body2">Creato da: {parentId}</Typography>}
-        </Box>
         <MagicWrapper>
           <Box
             aria-label="form_Registration"
@@ -129,38 +126,35 @@ export default function Registration() {
                 gap={2}
                 sx={{ display: "flex", flexDirection: "row" }} // Per supportare order
               >
-                
-                  <TextField
-                    id="f-name"
-                    key="field-name"
-                    name="name"
-                    label="Nome"
-                    value={form.name}
-                    onChange={handleChange}
-                    required
-                    fullWidth
-                    sx={{
-                      flex: 1,
-                      "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                    }}
-                  />
-                
-                
-                  <TextField
-                    id="f-cognome"
-                    key="field-cognome"
-                    name="cognome"
-                    label="Cognome"
-                    //value={}
-                    //onChange={handleChange}
-                    required
-                    fullWidth
-                    sx={{
-                      flex: 1,
-                      "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                    }}
-                  />
-                
+                <TextField
+                  id="f-name"
+                  key="field-name"
+                  name="name"
+                  label="Nome"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                  fullWidth
+                  sx={{
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                  }}
+                />
+
+                <TextField
+                  id="f-cognome"
+                  key="field-cognome"
+                  name="cognome"
+                  label="Cognome"
+                  //value={}
+                  //onChange={handleChange}
+                  required
+                  fullWidth
+                  sx={{
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                  }}
+                />
               </Box>
               <Divider />
             </Box>
@@ -181,40 +175,37 @@ export default function Registration() {
                 gap={2}
                 sx={{ display: "flex", flexDirection: "row" }} // Per supportare order
               >
-                
-                  <TextField
-                    id="f-email"
-                    key="field-email"
-                    name="email"
-                    label="Email"
-                    type="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    required
-                    fullWidth
-                    sx={{
-                      flex: 1,
-                      "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                    }}
-                  />
-                
-                
-                  <TextField
-                    id="f-password"
-                    key="field-password"
-                    name="password"
-                    label="Password"
-                    type="password"
-                    value={form.password}
-                    onChange={handleChange}
-                    required
-                    fullWidth
-                    sx={{
-                      flex: 1,
-                      "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                    }}
-                  />
-                
+                <TextField
+                  id="f-email"
+                  key="field-email"
+                  name="email"
+                  label="Email"
+                  type="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                  fullWidth
+                  sx={{
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                  }}
+                />
+
+                <TextField
+                  id="f-password"
+                  key="field-password"
+                  name="password"
+                  label="Password"
+                  type="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                  fullWidth
+                  sx={{
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                  }}
+                />
               </Box>
               <Divider />
             </Box>
@@ -235,37 +226,35 @@ export default function Registration() {
                 gap={2}
               >
                 {!isAgent && (
-                  
-                    <TextField
-                      id="f-role"
-                      key="field-role"
-                      name="role"
-                      label="Ruolo"
-                      select
-                      value={form.role}
-                      onChange={handleChange}
-                      required
-                      fullWidth
-                      sx={{
-                        flex: 1,
-                        "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                      }}
-                    >
-                      <MenuItem value="admin">Admin</MenuItem>
-                      <MenuItem value="agent">Agent</MenuItem>
-                      <MenuItem value="client">Client</MenuItem>
-                    </TextField>
-                  
+                  <TextField
+                    id="f-role"
+                    key="field-role"
+                    name="role"
+                    label="Ruolo"
+                    select
+                    value={form.role}
+                    onChange={handleChange}
+                    required
+                    fullWidth
+                    sx={{
+                      flex: 1,
+                      "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                    }}
+                  >
+                    <MenuItem value="admin">Admin</MenuItem>
+                    <MenuItem value="agent">Agent</MenuItem>
+                    <MenuItem value="client">Client</MenuItem>
+                  </TextField>
                 )}
               </Box>
               <Divider />
             </Box>
           </Box>
         </MagicWrapper>
-        <Divider />
 
+        <Box></Box>
+        <Box height={"100%"}></Box>
         <Divider />
-
         <Box display="flex" p={2} justifyContent="flex-end" gap={2}>
           <Button variant="outlined" color="primary" onClick={handleCancel}>
             Annulla

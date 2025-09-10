@@ -10,19 +10,21 @@ import theme from "./theme";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="it">
       <body className={inter.className}>
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <AuthProvider>
-              {/* Ora il drawer gestisce il main e i margini dinamici */}
-              <ResponsiveDrawer>
-                <CustomizationProvider>
-                  {children}
-                </CustomizationProvider>
-              </ResponsiveDrawer>
+            {/* Ora il drawer gestisce il main e i margini dinamici */}
+            <ResponsiveDrawer>
+              {children}
+            </ResponsiveDrawer>
           </AuthProvider>
         </ThemeProvider>
       </body>
