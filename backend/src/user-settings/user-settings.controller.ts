@@ -44,8 +44,8 @@ export class UserSettingsController {
       }
 
       this.logger.log(`Using parsed userId: ${userId}`);
-      const settings = await this.userSettingsService.findByUserId(userId);
-      return settings || { customizationConfig: null, adminFieldRestrictions: null };
+  const settings = await this.userSettingsService.findByUserId(userId);
+  return settings || { customizationConfig: null };
     } catch (error) {
       this.logger.error('Error getting user settings:', error);
       throw error;
@@ -75,7 +75,7 @@ export class UserSettingsController {
   }
 
   @Put('my-settings/customization')
-  async updateMyCustomization(@Request() req, @Body() body: { customizationConfig: any }) {
+  async updateMyCustomization(@Request() req, @Body() body: any) {
     try {
       const userIdRaw = req.user.userId; // CORRETTO: usa userId invece di sub
       this.logger.log(`Updating customization for raw userId: ${userIdRaw} (type: ${typeof userIdRaw})`);
@@ -92,8 +92,11 @@ export class UserSettingsController {
         throw new BadRequestException('customizationConfig is required in request body');
       }
 
-      this.logger.log(`Using parsed userId: ${userId} for customization update`);
-      const result = await this.userSettingsService.updateCustomizationConfig(userId, body.customizationConfig);
+      // Optional settingname support: client may pass settingname to identify the form (fromKey)
+      const settingname = typeof body.settingname === 'string' && body.settingname.length > 0 ? body.settingname : undefined;
+
+      this.logger.log(`Using parsed userId: ${userId} for customization update, settingname: ${settingname}`);
+  const result = await this.userSettingsService.updateCustomizationConfig(userId, body.customizationConfig, settingname);
       this.logger.log(`Successfully updated customization for userId: ${userId}`);
       
       return result;
@@ -103,31 +106,7 @@ export class UserSettingsController {
     }
   }
 
-  @Put('admin/field-restrictions/:targetUserId')
-  async updateFieldRestrictions(
-    @Request() req,
-    @Param('targetUserId') targetUserId: number,
-    @Body() body: { adminFieldRestrictions: any }
-  ) {
-    try {
-      // Solo gli admin possono impostare restrizioni sui campi
-      if (req.user.role !== UserRole.ADMIN) {
-        throw new ForbiddenException('Only admins can set field restrictions');
-      }
-
-      if (!targetUserId || isNaN(targetUserId)) {
-        throw new BadRequestException('Invalid target user ID');
-      }
-      
-      return await this.userSettingsService.updateAdminFieldRestrictions(
-        targetUserId, 
-        body.adminFieldRestrictions
-      );
-    } catch (error) {
-      this.logger.error('Error updating field restrictions:', error);
-      throw error;
-    }
-  }
+  // admin-only field restrictions endpoint removed; admin restrictions are now handled inside customizationConfig
 
   @Get('admin/all-settings')
   async getAllSettings(@Request() req) {
@@ -154,7 +133,7 @@ export class UserSettingsController {
         throw new BadRequestException('Invalid user ID');
       }
 
-      await this.userSettingsService.remove(userId);
+  await this.userSettingsService.remove(userId);
       return { message: 'Settings deleted successfully' };
     } catch (error) {
       this.logger.error('Error deleting user settings:', error);

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useContext } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -25,76 +25,118 @@ import LockIcon from "@mui/icons-material/Lock";
 import EditIcon from "@mui/icons-material/Edit";
 import SettingsIcon from "@mui/icons-material/Settings";
 
+import { AuthContext } from "../../components/Authcontext";
+
 export default function MagicSettingsDialog({
+  Tree,
   ovr,
   setOvr,
   formKey,
   update,
   list,
-  userId,
-  role,
-  parentId,
 }: any) {
-  
+
+  const authContext = useContext(AuthContext);
+  const fetchWithAuth = authContext?.fetchWithAuth;
+  const userId = authContext?.user?.id;
+  const role = authContext?.user?.role;
+  const parentId = authContext?.user?.parentId;
+
   const [open, setOpen] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   // internal saved state and dirty tracking
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState<boolean>(false);
-
+  
   const storageKey = (uid?: string, formKey?: string) =>`magic_ovr:${uid || "anon"}:${formKey || "global"}`;
-
-  const saveToLocal = () => {
-    if (typeof window === "undefined") return;
+  // form-specific setting name: use parentId and formKey as requested
+  const settingName = (() => {
+    if (formKey && parentId) return `${parentId}:${formKey}`;
+    if (formKey) return `${formKey}`;
+    return `user:${userId}`;
+  })();
+  
+  const saveToServer = async () => {
     try {
-      const payload = { ovr, savedAt: Date.now() };
-      const key = storageKey(userId, formKey);
-      // prefer formKey passed via props (we'll accept userId as second arg),
-      // but callers will call without args, so try to read from attributes
-      // if not present, fall back to 'global'
-      // Since TS can't access outer formKey prop here (not provided), we allow callers to pass it.
-      localStorage.setItem(key, JSON.stringify(payload));
-      const s = JSON.stringify(ovr);
-      setSavedSnapshot(s);
+      if (!fetchWithAuth) {
+        // fallback to localStorage for unauthenticated users
+        const key = storageKey(userId, formKey);
+        localStorage.setItem(key, JSON.stringify({ ovr, savedAt: Date.now() }));
+        setSavedSnapshot(JSON.stringify(ovr));
+        setIsSaved(true);
+        return;
+      }
+
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+      const url = `${API_BASE_URL}/user-settings/my-settings/customization`;
+      const body: any = { customizationConfig: { ovr }, settingname: settingName };
+      const res = await fetchWithAuth(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error('Save failed');
+      setSavedSnapshot(JSON.stringify(ovr));
       setIsSaved(true);
-      // eslint-disable-next-line no-console
-      console.log(
-        "save:--->",
-        key,
-        JSON.stringify(payload)
-      );
     } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error("Error saving overrides:", e);
+      console.error('Error saving overrides to server:', e);
     }
   };
 
-  const loadFromLocal = () => {
-    if (typeof window === "undefined") return;
+  const loadFromServer = async () => {
     try {
-      const key = storageKey(userId, formKey);
-      const raw = localStorage.getItem(key);
-      if (!raw) {
-        // eslint-disable-next-line no-console
-        console.log("No saved overrides found for key", key);
+      if (!fetchWithAuth) {
+        const key = storageKey(userId, formKey);
+        const raw = localStorage.getItem(key);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (data && typeof data.ovr === 'object') {
+          setOvr(data.ovr);
+          setSavedSnapshot(JSON.stringify(data.ovr));
+          setIsSaved(true);
+        }
         return;
       }
-      const data = JSON.parse(raw);
-      if (data && typeof data.ovr === "object") {
-        setOvr(data.ovr);
-        const s = JSON.stringify(data.ovr);
-        setSavedSnapshot(s);
+
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+      const url = `${API_BASE_URL}/user-settings/my-settings`;
+      const res = await fetchWithAuth(url);
+      if (!res.ok) throw new Error('Load failed');
+      const data = await res.json();
+      // server stores customizationConfig as a full object; we expect { ovr } inside
+      const cfg = data?.customizationConfig;
+      if (cfg && cfg.ovr) {
+        setOvr(cfg.ovr);
+        setSavedSnapshot(JSON.stringify(cfg.ovr));
         setIsSaved(true);
-        // eslint-disable-next-line no-console
-        console.log(
-          "MagicSettingsDialog: loaded overrides from localStorage",
-          key
-        );
       }
     } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error("Error loading overrides:", e);
+      console.error('Error loading overrides from server:', e);
+    }
+  };
+
+  const resetOnServer = async () => {
+    const ok = typeof window !== 'undefined' ? window.confirm('Resettare tutte le personalizzazioni per questo form?') : true;
+    if (!ok) return;
+    try {
+      if (!fetchWithAuth) {
+        try { localStorage.removeItem(storageKey(userId, formKey)); } catch (e) {}
+        setOvr({});
+        setSavedSnapshot(null);
+        setIsSaved(false);
+        return;
+      }
+
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+      const url = `${API_BASE_URL}/user-settings/my-settings`;
+      const res = await fetchWithAuth(url, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Reset failed');
+      setOvr({});
+      setSavedSnapshot(null);
+      setIsSaved(false);
+    } catch (e) {
+      console.error('Error resetting overrides on server:', e);
     }
   };
 
@@ -106,18 +148,9 @@ export default function MagicSettingsDialog({
 
   // auto-load when userId or (optional) formKey change: attempt to load saved if present
   React.useEffect(() => {
-    try {
-      if (typeof window === "undefined") return;
-      const key = storageKey(userId, formKey);
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        loadFromLocal();
-      }
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error("Error checking saved overrides:", e);
-    }
-  }, [userId]);
+    // try to load from server/local on mount or when userId/formKey change
+    loadFromServer();
+  }, [userId, formKey]);
 
   const onReset = () => {
     const ok =
@@ -171,7 +204,7 @@ export default function MagicSettingsDialog({
           <Chip label={`Ruolo: ${String(role ?? "anon")}`} size="small" />
           <Chip
             label={isSaved ? "Salvato" : "Modifiche non salvate"}
-            color={isSaved ? "success" : "default"}
+            color={isSaved ? "success" : "warning"}
             size="small"
           />
         </DialogTitle>
@@ -253,13 +286,13 @@ export default function MagicSettingsDialog({
         <DialogActions
           sx={{ justifyContent: "flex-end", gap: 1, pr: 2, pb: 2 }}
         >
-          <Button onClick={saveToLocal} variant="contained" color="primary">
+          <Button onClick={saveToServer} variant="contained" color="primary">
             Salva
           </Button>
-          <Button onClick={loadFromLocal} variant="outlined">
+          <Button onClick={loadFromServer} variant="outlined">
             Carica
           </Button>
-          <Button onClick={onReset} color="error" variant="outlined">
+          <Button onClick={resetOnServer} color="error" variant="outlined">
             Reset
           </Button>
           <Button onClick={() => setOpen(false)}>Chiudi</Button>

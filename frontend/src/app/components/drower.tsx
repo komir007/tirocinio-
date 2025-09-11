@@ -16,6 +16,7 @@ import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
 import MenuIcon from "@mui/icons-material/Menu";
 import IconButton from "@mui/material/IconButton";
 import LogoutIcon from "@mui/icons-material/Logout";
+import WarningIcon from '@mui/icons-material/Warning';
 import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import { usePathname, useRouter } from "next/navigation";
@@ -73,6 +74,36 @@ export default function ResponsiveDrawer(props: Props) {
       icon: <PeopleAltRoundedIcon />,
       path: "/user",
       paths: ["/user", "/user/registration", "/user/edit_user"],
+    },
+    {
+      label: "AZIENDE",
+      icon: <WarningIcon/>,
+      path: "",
+      paths: [""],
+    },
+    {
+      label: "FORNITORI",
+      icon: <WarningIcon/>,
+      path: "",
+      paths: [""],
+    },
+    {
+      label: "CLIENTI",
+      icon: <WarningIcon />,
+      path: "",
+      paths: [""],
+    },
+    {
+      label: "MAGGAZZINO",
+      icon: <WarningIcon />,
+      path: "",
+      paths: [""],
+    },
+    {
+      label: "FISHANDCHIPS",
+      icon: <WarningIcon />,
+      path: "",
+      paths: [""],
     },
   ];
 
@@ -207,7 +238,7 @@ export default function ResponsiveDrawer(props: Props) {
             <ListItemButton
               onClick={() => router.push(item.path)}
               sx={{
-                margin: 0.5,
+                margin: 1,
                 minHeight: 48,
                 justifyContent: collapsed ? "center" : "flex-start",
                 px: 2.5,

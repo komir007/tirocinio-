@@ -1,4 +1,4 @@
-import { IsOptional, IsObject, IsNumber } from 'class-validator';
+import { IsOptional, IsObject, IsNumber, IsString } from 'class-validator';
 
 export class CreateUserSettingsDto {
   @IsNumber()
@@ -9,8 +9,10 @@ export class CreateUserSettingsDto {
   customizationConfig?: any;
 
   @IsOptional()
-  @IsObject()
-  adminFieldRestrictions?: any;
+  @IsString()
+  settingname?: string;
+
+
 }
 
 export class UpdateUserSettingsDto {
@@ -19,6 +21,6 @@ export class UpdateUserSettingsDto {
   customizationConfig?: any;
 
   @IsOptional()
-  @IsObject()
-  adminFieldRestrictions?: any;
+  @IsString()
+  settingname?: string;
 }

@@ -16,20 +16,23 @@ export class UserSettingsService {
     return await this.userSettingsRepository.save(userSettings);
   }
 
-  async findByUserId(userId: number): Promise<UserSettings | null> {
+  async findByUserId(userId: number, settingname?: string): Promise<UserSettings | null> {
+    const where: any = { userId };
+    if (settingname) where.settingname = settingname;
     return await this.userSettingsRepository.findOne({
-      where: { userId },
+      where,
       relations: ['user']
     });
   }
 
-  async updateByUserId(userId: number, updateUserSettingsDto: UpdateUserSettingsDto): Promise<UserSettings> {
-    let userSettings = await this.findByUserId(userId);
-    
+  async updateByUserId(userId: number, updateUserSettingsDto: UpdateUserSettingsDto, settingname?: string): Promise<UserSettings> {
+    let userSettings = await this.findByUserId(userId, settingname);
+
     if (!userSettings) {
-      // CORRETTO: Assicurati che userId sia incluso quando si crea un nuovo record
+      // Assicurati che userId e settingname siano inclusi quando si crea un nuovo record
       userSettings = await this.create({
-        userId, // Importante: includi sempre userId
+        userId,
+        settingname: settingname || updateUserSettingsDto?.settingname || 'default',
         ...updateUserSettingsDto
       });
     } else {
@@ -37,7 +40,7 @@ export class UserSettingsService {
       Object.assign(userSettings, updateUserSettingsDto);
       userSettings = await this.userSettingsRepository.save(userSettings);
     }
-    
+
     return userSettings;
   }
 
@@ -49,7 +52,7 @@ export class UserSettingsService {
   }
 
   // CORRETTO: Metodo per aggiornare solo le configurazioni di customizzazione
-  async updateCustomizationConfig(userId: number, customizationConfig: any): Promise<UserSettings> {
+  async updateCustomizationConfig(userId: number, customizationConfig: any, settingname?: string): Promise<UserSettings> {
     console.log('Updating customization config for userId:', userId, 'with config:', customizationConfig);
     
     // Verifica che userId sia un numero valido
@@ -57,18 +60,6 @@ export class UserSettingsService {
       throw new Error(`Invalid userId: ${userId}`);
     }
 
-    return await this.updateByUserId(userId, { customizationConfig });
-  }
-
-  // CORRETTO: Metodo per aggiornare le restrizioni admin (solo per admin)
-  async updateAdminFieldRestrictions(userId: number, adminFieldRestrictions: any): Promise<UserSettings> {
-    console.log('Updating admin field restrictions for userId:', userId);
-    
-    // Verifica che userId sia un numero valido
-    if (!userId || isNaN(userId)) {
-      throw new Error(`Invalid userId: ${userId}`);
-    }
-
-    return await this.updateByUserId(userId, { adminFieldRestrictions });
+  return await this.updateByUserId(userId, { customizationConfig }, settingname);
   }
 }

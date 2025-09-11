@@ -13,7 +13,6 @@ import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import { Divider, IconButton } from "@mui/material";
 import { Settings as SettingsIcon } from "@mui/icons-material";
-
 import MagicWrapper from "../test_secon/comp/MagicWrapper";
 
 export default function Registration() {
@@ -81,20 +80,20 @@ export default function Registration() {
       justifyContent="space-between"
       alignItems="flex-start"
       height="100%"
-      minHeight="60vh"
+      minHeight="70vh"
     >
       <Paper
         elevation={2}
         sx={{
           width: "100%",
           maxWidth: "100vw",
-          height: "100%",
-          maxHeight: "100vh",
+          height: "auto", // <-- evitare che Paper espanda la pagina
+          maxHeight: "60vh", // <-- limita l'altezza complessiva (regola a piacere)
           borderRadius: 3,
-
           bgcolor: "#fff",
           display: "flex",
           flexDirection: "column",
+          overflow: "hidden", // <-- impedisce lo scroll esterno; lo gestiamo nel form
         }}
       >
         <MagicWrapper>
@@ -103,9 +102,14 @@ export default function Registration() {
             key="form_Registration"
             component="form"
             onSubmit={handleSubmit}
-            display="flex"
-            flexDirection="column"
-            flexGrow={1}
+            /* layout e scroll qui */
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              flex: "1 1 auto", // <-- occupa lo spazio rimanente del Paper
+              minHeight: 0, // <-- ESSENZIALE: permette al box di ridursi e abilitare lo scroll interno
+              overflowY: "auto", // <-- lo scroll apparirà solo qui
+            }}
           >
             <Box
               id="sezione_anagrafica"
@@ -158,6 +162,7 @@ export default function Registration() {
               </Box>
               <Divider />
             </Box>
+
 
             <Box
               id="sezione_accesso"
@@ -251,9 +256,10 @@ export default function Registration() {
             </Box>
           </Box>
         </MagicWrapper>
+        <Box sx={{ height: "100%" }}>
 
-        <Box></Box>
-        <Box height={"100%"}></Box>
+        </Box>
+        {/* footer / bottoni rimangono fissi sotto e NON scrollano */}
         <Divider />
         <Box display="flex" p={2} justifyContent="flex-end" gap={2}>
           <Button variant="outlined" color="primary" onClick={handleCancel}>

@@ -14,11 +14,11 @@ import MagicSettingsDialog from "./MagicSettingsDialog";
 import IconButton from "@mui/material/IconButton";
 import SettingsIcon from "@mui/icons-material/Settings";
 
-
 type Meta = {
   visible: boolean;
   order: number;
   disabled: boolean;
+  adminOnly?: boolean;
 };
 type TNode = {
   key: string;
@@ -28,16 +28,12 @@ type TNode = {
   children: TNode[];
 };
 
-export default function MagicWrapper({ children }: { children: ReactNode }) {
+export default function MagicWrapper({ children, sx = {}, className, ...rest }: { children: ReactNode; sx?: any; className?: string; [k: string]: any; }) {
   const authContext = useContext(AuthContext);
   const userId = authContext?.user?.id;
   const role = authContext?.user?.role;
   const parentid = authContext?.user?.parentId;
   const [ovr, setOvr] = useState<Record<string, Meta>>({});
-
-
-
-
 
   // Build a simple tree from children, mixing defaults (props) with overrides
   const tree = useMemo((): TNode[] => {
@@ -54,8 +50,8 @@ export default function MagicWrapper({ children }: { children: ReactNode }) {
         const def: Meta = {
           visible: typeof props.visible === "boolean" ? props.visible : true,
           order: typeof props.order === "number" ? props.order : idx,
-          disabled:
-            typeof props.disabled === "boolean" ? props.disabled : false,
+          disabled: typeof props.disabled === "boolean" ? props.disabled : false,
+          adminOnly: typeof props.adminOnly === "boolean" ? props.adminOnly : false,
         };
         const meta = ovr[key] ? { ...def, ...ovr[key] } : def;
         const children: TNode[] =
@@ -170,7 +166,18 @@ export default function MagicWrapper({ children }: { children: ReactNode }) {
     setOvr((p) => ({ ...p, [key]: { ...(p[key] ?? {}), ...patch } }));
 
   return (
-    <div>
+    <Box
+      className={className}
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        flex: "1 1 auto", // permette al wrapper di ridursi/espandersi nel parent flex
+        minHeight: 0,     // CRUCIALE: abilita lo scroll interno del figlio
+        // non impostare overflow qui: lasciare che il form decida dove scrollare
+        ...sx,
+      }}
+      {...rest}
+    >
       <div
         style={{
           position: "sticky",
@@ -185,19 +192,16 @@ export default function MagicWrapper({ children }: { children: ReactNode }) {
           <Box width="100%"></Box>
           <strong>Custom</strong>
           <MagicSettingsDialog
+            tree={tree}
             ovr={ovr}
             setOvr={setOvr}
             update={update}
             list={list}
             formKey={formKey}
-            userId={userId}
-            role={role}
-            parentId={parentid}
           />
         </div>
       </div>
       {render(tree)}
-      
-    </div>
+    </Box>
   );
 }
