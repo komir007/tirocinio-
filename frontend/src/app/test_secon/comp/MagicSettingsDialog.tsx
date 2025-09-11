@@ -152,28 +152,7 @@ export default function MagicSettingsDialog({
     loadFromServer();
   }, [userId, formKey]);
 
-  const onReset = () => {
-    const ok =
-      typeof window !== "undefined"
-        ? window.confirm(
-            "Resettare tutte le personalizzazioni per questo form?"
-          )
-        : true;
-    if (!ok) return;
-    try {
-      localStorage.removeItem(storageKey(userId, formKey));
-    } catch (e) {
-      // ignore
-    }
-    setOvr({});
-    setSavedSnapshot(null);
-    setIsSaved(false);
-    // eslint-disable-next-line no-console
-    console.log(
-      "MagicSettingsDialog: reset overrides and removed saved entry",
-      storageKey(userId, formKey)
-    );
-  };
+
 
   return (
     <div

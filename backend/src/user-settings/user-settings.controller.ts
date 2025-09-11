@@ -13,7 +13,10 @@ import {
   Logger,
 } from '@nestjs/common';
 import { UserSettingsService } from './user-settings.service';
-import { CreateUserSettingsDto, UpdateUserSettingsDto } from './dto/user-settings.dto';
+import {
+  CreateUserSettingsDto,
+  UpdateUserSettingsDto,
+} from './dto/user-settings.dto';
 import { JwtGuard } from '../auth/jwt.guard';
 import { UserRole } from '../user/user.entity';
 
@@ -33,19 +36,27 @@ export class UserSettingsController {
   async getMySettings(@Request() req) {
     try {
       const userIdRaw = req.user.userId; // CORRETTO: usa userId invece di sub
-      this.logger.log(`Getting settings for raw userId: ${userIdRaw} (type: ${typeof userIdRaw})`);
-      
+      this.logger.log(
+        `Getting settings for raw userId: ${userIdRaw} (type: ${typeof userIdRaw})`,
+      );
+
+      this.logger.log(`Using userId: ${req.user.userId}`);
+      this.logger.log(`Using parentId: ${req.user.parentId}`);
+
       // Converti userId a numero se è una stringa
-      const userId = typeof userIdRaw === 'string' ? parseInt(userIdRaw, 10) : userIdRaw;
-      
+      const userId =
+        typeof userIdRaw === 'string' ? parseInt(userIdRaw, 10) : userIdRaw;
+
       if (!userId || isNaN(userId)) {
-        this.logger.error(`Invalid user ID after parsing: ${userId} (original: ${userIdRaw})`);
+        this.logger.error(
+          `Invalid user ID after parsing: ${userId} (original: ${userIdRaw})`,
+        );
         throw new BadRequestException('Invalid user ID');
       }
 
       this.logger.log(`Using parsed userId: ${userId}`);
-  const settings = await this.userSettingsService.findByUserId(userId);
-  return settings || { customizationConfig: null };
+      const settings = await this.userSettingsService.findByUserId(userId);
+      return settings || { customizationConfig: null };
     } catch (error) {
       this.logger.error('Error getting user settings:', error);
       throw error;
@@ -53,16 +64,24 @@ export class UserSettingsController {
   }
 
   @Put('my-settings')
-  async updateMySettings(@Request() req, @Body() updateDto: UpdateUserSettingsDto) {
+  async updateMySettings(
+    @Request() req,
+    @Body() updateDto: UpdateUserSettingsDto,
+  ) {
     try {
       const userIdRaw = req.user.userId; // CORRETTO: usa userId invece di sub
-      this.logger.log(`Updating settings for raw userId: ${userIdRaw} (type: ${typeof userIdRaw})`);
-      
+      this.logger.log(
+        `Updating settings for raw userId: ${userIdRaw} (type: ${typeof userIdRaw})`,
+      );
+
       // Converti userId a numero se è una stringa
-      const userId = typeof userIdRaw === 'string' ? parseInt(userIdRaw, 10) : userIdRaw;
-      
+      const userId =
+        typeof userIdRaw === 'string' ? parseInt(userIdRaw, 10) : userIdRaw;
+
       if (!userId || isNaN(userId)) {
-        this.logger.error(`Invalid user ID after parsing: ${userId} (original: ${userIdRaw})`);
+        this.logger.error(
+          `Invalid user ID after parsing: ${userId} (original: ${userIdRaw})`,
+        );
         throw new BadRequestException('Invalid user ID');
       }
 
@@ -78,27 +97,45 @@ export class UserSettingsController {
   async updateMyCustomization(@Request() req, @Body() body: any) {
     try {
       const userIdRaw = req.user.userId; // CORRETTO: usa userId invece di sub
-      this.logger.log(`Updating customization for raw userId: ${userIdRaw} (type: ${typeof userIdRaw})`);
-      
+      this.logger.log(
+        `Updating customization for raw userId: ${userIdRaw} (type: ${typeof userIdRaw})`,
+      );
+
       // Converti userId a numero se è una stringa
-      const userId = typeof userIdRaw === 'string' ? parseInt(userIdRaw, 10) : userIdRaw;
-      
+      const userId =
+        typeof userIdRaw === 'string' ? parseInt(userIdRaw, 10) : userIdRaw;
+
       if (!userId || isNaN(userId)) {
-        this.logger.error(`Invalid user ID after parsing: ${userId} (original: ${userIdRaw})`);
+        this.logger.error(
+          `Invalid user ID after parsing: ${userId} (original: ${userIdRaw})`,
+        );
         throw new BadRequestException('Invalid user ID');
       }
 
       if (!body || typeof body.customizationConfig === 'undefined') {
-        throw new BadRequestException('customizationConfig is required in request body');
+        throw new BadRequestException(
+          'customizationConfig is required in request body',
+        );
       }
 
       // Optional settingname support: client may pass settingname to identify the form (fromKey)
-      const settingname = typeof body.settingname === 'string' && body.settingname.length > 0 ? body.settingname : undefined;
+      const settingname =
+        typeof body.settingname === 'string' && body.settingname.length > 0
+          ? body.settingname
+          : undefined;
 
-      this.logger.log(`Using parsed userId: ${userId} for customization update, settingname: ${settingname}`);
-  const result = await this.userSettingsService.updateCustomizationConfig(userId, body.customizationConfig, settingname);
-      this.logger.log(`Successfully updated customization for userId: ${userId}`);
-      
+      this.logger.log(
+        `Using parsed userId: ${userId} for customization update, settingname: ${settingname}`,
+      );
+      const result = await this.userSettingsService.updateCustomizationConfig(
+        userId,
+        body.customizationConfig,
+        settingname,
+      );
+      this.logger.log(
+        `Successfully updated customization for userId: ${userId}`,
+      );
+
       return result;
     } catch (error) {
       this.logger.error('Error updating customization:', error);
@@ -114,7 +151,7 @@ export class UserSettingsController {
     if (req.user.role !== UserRole.ADMIN) {
       throw new ForbiddenException('Only admins can view all settings');
     }
-    
+
     // TODO: Implementare logica per ottenere tutte le impostazioni
     return { message: 'Feature to be implemented' };
   }
@@ -123,21 +160,68 @@ export class UserSettingsController {
   async deleteMySettings(@Request() req) {
     try {
       const userIdRaw = req.user.userId; // CORRETTO: usa userId invece di sub
-      this.logger.log(`Deleting settings for raw userId: ${userIdRaw} (type: ${typeof userIdRaw})`);
-      
+      this.logger.log(
+        `Deleting settings for raw userId: ${userIdRaw} (type: ${typeof userIdRaw})`,
+      );
+
       // Converti userId a numero se è una stringa
-      const userId = typeof userIdRaw === 'string' ? parseInt(userIdRaw, 10) : userIdRaw;
-      
+      const userId =
+        typeof userIdRaw === 'string' ? parseInt(userIdRaw, 10) : userIdRaw;
+
       if (!userId || isNaN(userId)) {
-        this.logger.error(`Invalid user ID after parsing: ${userId} (original: ${userIdRaw})`);
+        this.logger.error(
+          `Invalid user ID after parsing: ${userId} (original: ${userIdRaw})`,
+        );
         throw new BadRequestException('Invalid user ID');
       }
 
-  await this.userSettingsService.remove(userId);
+      await this.userSettingsService.remove(userId);
       return { message: 'Settings deleted successfully' };
     } catch (error) {
       this.logger.error('Error deleting user settings:', error);
       throw error;
     }
+  }
+
+  @Get(':id')
+  async getSettingsById(@Param('id') idParam: string, @Request() req) {
+    const requestedId = parseInt(idParam, 10);
+    if (!requestedId || isNaN(requestedId))
+      throw new BadRequestException('Invalid id');
+
+    const requesterIdRaw = req.user.userId;
+    const requesterId =
+      typeof requesterIdRaw === 'string'
+        ? parseInt(requesterIdRaw, 10)
+        : requesterIdRaw;
+    const role = req.user.role;
+
+    // autorizzazioni:
+    // - admin può vedere tutto
+    // - l'utente può vedere se richiede il proprio id
+    // - agent può leggere il suo admin (parentId)
+    // - client può leggere il suo agent (parentId)
+    if (role !== UserRole.ADMIN) {
+      if (requesterId === requestedId) {
+        // ok - sta leggendo sé stesso
+      } else if (role === UserRole.AGENT && req.user.parentId === requestedId) {
+        // agent legge admin (parent)
+      } else if (
+        role === UserRole.CLIENT &&
+        req.user.parentId === requestedId
+      ) {
+        // client legge agent (parent)
+      } else {
+        throw new ForbiddenException('Not allowed to read this user settings');
+      }
+    }
+
+    // opzionale: supporto settingname via query string
+    const settingname = req.query?.settingname;
+    const settings = await this.userSettingsService.findByUserId(
+      requestedId,
+      settingname,
+    );
+    return settings || { customizationConfig: null };
   }
 }
