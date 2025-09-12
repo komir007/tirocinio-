@@ -25,6 +25,11 @@ export class UserSettingsService {
     });
   }
 
+  // wrapper esplicito: trova lo setting specifico per user + settingname
+  async findByUserIdAndSetting(adminId: number, settingname: string): Promise<UserSettings | null> {
+    return this.findByUserId(adminId, settingname);
+  }
+
   async updateByUserId(userId: number, updateUserSettingsDto: UpdateUserSettingsDto, settingname?: string): Promise<UserSettings> {
     let userSettings = await this.findByUserId(userId, settingname);
 
@@ -48,6 +53,16 @@ export class UserSettingsService {
     const result = await this.userSettingsRepository.delete({ userId });
     if (result.affected === 0) {
       throw new NotFoundException(`User settings for user ${userId} not found`);
+    }
+  }
+
+  // Rimuove la configurazione specifica (userId + settingname)
+  async removeByUserIdAndSetting(userId: number, settingname: string): Promise<void> {
+    const result = await this.userSettingsRepository.delete({ userId, settingname });
+    if (result.affected === 0) {
+      throw new NotFoundException(
+        `User settings for user ${userId} and setting ${settingname} not found`,
+      );
     }
   }
 

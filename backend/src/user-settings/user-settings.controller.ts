@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   Request,
   ForbiddenException,
@@ -27,13 +28,13 @@ export class UserSettingsController {
 
   constructor(private readonly userSettingsService: UserSettingsService) {}
 
-  @Get('test')
-  testEndpoint() {
-    return { message: 'User Settings API is working!', timestamp: new Date() };
-  }
+
+  // -------------------
+  // GET (current user)
+  // -------------------
 
   @Get('my-settings')
-  async getMySettings(@Request() req) {
+  async getMySettings(@Request() req, @Query('settingname') settingname?: string) {
     try {
       const userIdRaw = req.user.userId; // CORRETTO: usa userId invece di sub
       this.logger.log(
@@ -55,7 +56,11 @@ export class UserSettingsController {
       }
 
       this.logger.log(`Using parsed userId: ${userId}`);
-      const settings = await this.userSettingsService.findByUserId(userId);
+      const settings = await this.userSettingsService.findByUserId(
+        userId,
+        settingname,
+      );
+      console.log("Settings fetched--------------:", settings);
       return settings || { customizationConfig: null };
     } catch (error) {
       this.logger.error('Error getting user settings:', error);
@@ -63,7 +68,7 @@ export class UserSettingsController {
     }
   }
 
-  @Put('my-settings')
+  @Put('my-settings/OLD')
   async updateMySettings(
     @Request() req,
     @Body() updateDto: UpdateUserSettingsDto,
@@ -86,14 +91,20 @@ export class UserSettingsController {
       }
 
       this.logger.log(`Using parsed userId: ${userId}`);
-      return await this.userSettingsService.updateByUserId(userId, updateDto);
+      // Ensure settingname is provided either in body or inside updateDto
+      const settingname = updateDto?.settingname || req.body?.settingname;
+      return await this.userSettingsService.updateByUserId(
+        userId,
+        updateDto,
+        settingname,
+      );
     } catch (error) {
       this.logger.error('Error updating user settings:', error);
       throw error;
     }
   }
 
-  @Put('my-settings/customization')
+  @Put('my-settings')
   async updateMyCustomization(@Request() req, @Body() body: any) {
     try {
       const userIdRaw = req.user.userId; // CORRETTO: usa userId invece di sub
@@ -145,23 +156,33 @@ export class UserSettingsController {
 
   // admin-only field restrictions endpoint removed; admin restrictions are now handled inside customizationConfig
 
-  @Get('admin/all-settings')
-  async getAllSettings(@Request() req) {
-    // Solo gli admin possono vedere tutte le impostazioni
-    if (req.user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException('Only admins can view all settings');
-    }
+  // Recupera la config di un admin specifico (usato da agent per import)
+  @Get('my-admin-setting')
+  async getAdminConfig(@Request() req, @Query('settingname') settingname?: string) {
+    const adminId = req.user.parentId;
+    if (!adminId) throw new BadRequestException('Invalid admin id');
 
-    // TODO: Implementare logica per ottenere tutte le impostazioni
-    return { message: 'Feature to be implemented' };
+    // solo admin o agent/client che hanno parentId uguale possono richiedere
+    const requesterIdRaw = req.user.userId;
+    const requesterId =
+      typeof requesterIdRaw === 'string'
+        ? parseInt(requesterIdRaw, 10)
+        : requesterIdRaw;
+    const role = req.user.role;
+
+    const settings = await this.userSettingsService.findByUserId(
+      adminId,
+      settingname,
+    );
+    return settings || { customizationConfig: null };
   }
 
   @Delete('my-settings')
-  async deleteMySettings(@Request() req) {
+  async deleteMySettings(@Request() req, @Query('settingname') settingname?: string) {
     try {
       const userIdRaw = req.user.userId; // CORRETTO: usa userId invece di sub
       this.logger.log(
-        `Deleting settings for raw userId: ${userIdRaw} (type: ${typeof userIdRaw})`,
+        `Deleting settings for raw userId: ${userIdRaw} (type: ${typeof userIdRaw}, settingsname: ${req.body.settingname})`,
       );
 
       // Converti userId a numero se è una stringa
@@ -175,53 +196,19 @@ export class UserSettingsController {
         throw new BadRequestException('Invalid user ID');
       }
 
+      if (settingname) {
+        await this.userSettingsService.removeByUserIdAndSetting(
+          userId,
+          String(settingname),
+        );
+        return { message: `Settings for ${settingname} deleted successfully` };
+      }
+
       await this.userSettingsService.remove(userId);
-      return { message: 'Settings deleted successfully' };
+      return { message: 'All settings deleted successfully' };
     } catch (error) {
       this.logger.error('Error deleting user settings:', error);
       throw error;
     }
-  }
-
-  @Get(':id')
-  async getSettingsById(@Param('id') idParam: string, @Request() req) {
-    const requestedId = parseInt(idParam, 10);
-    if (!requestedId || isNaN(requestedId))
-      throw new BadRequestException('Invalid id');
-
-    const requesterIdRaw = req.user.userId;
-    const requesterId =
-      typeof requesterIdRaw === 'string'
-        ? parseInt(requesterIdRaw, 10)
-        : requesterIdRaw;
-    const role = req.user.role;
-
-    // autorizzazioni:
-    // - admin può vedere tutto
-    // - l'utente può vedere se richiede il proprio id
-    // - agent può leggere il suo admin (parentId)
-    // - client può leggere il suo agent (parentId)
-    if (role !== UserRole.ADMIN) {
-      if (requesterId === requestedId) {
-        // ok - sta leggendo sé stesso
-      } else if (role === UserRole.AGENT && req.user.parentId === requestedId) {
-        // agent legge admin (parent)
-      } else if (
-        role === UserRole.CLIENT &&
-        req.user.parentId === requestedId
-      ) {
-        // client legge agent (parent)
-      } else {
-        throw new ForbiddenException('Not allowed to read this user settings');
-      }
-    }
-
-    // opzionale: supporto settingname via query string
-    const settingname = req.query?.settingname;
-    const settings = await this.userSettingsService.findByUserId(
-      requestedId,
-      settingname,
-    );
-    return settings || { customizationConfig: null };
   }
 }

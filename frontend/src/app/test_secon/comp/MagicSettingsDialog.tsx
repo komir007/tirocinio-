@@ -19,6 +19,7 @@ import {
   Tooltip,
 } from "@mui/material";
 
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import LockIcon from "@mui/icons-material/Lock";
@@ -35,7 +36,6 @@ export default function MagicSettingsDialog({
   update,
   list,
 }: any) {
-
   const authContext = useContext(AuthContext);
   const fetchWithAuth = authContext?.fetchWithAuth;
   const userId = authContext?.user?.id;
@@ -48,15 +48,12 @@ export default function MagicSettingsDialog({
   // internal saved state and dirty tracking
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState<boolean>(false);
-  
-  const storageKey = (uid?: string, formKey?: string) =>`magic_ovr:${uid || "anon"}:${formKey || "global"}`;
+
+  const storageKey = (uid?: string, formKey?: string) =>
+    `magic_ovr:${uid || "anon"}:${formKey || "global"}`;
   // form-specific setting name: use parentId and formKey as requested
-  const settingName = (() => {
-    if (formKey && parentId) return `${parentId}:${formKey}`;
-    if (formKey) return `${formKey}`;
-    return `user:${userId}`;
-  })();
-  
+  const settingName = formKey;
+
   const saveToServer = async () => {
     try {
       if (!fetchWithAuth) {
@@ -68,19 +65,24 @@ export default function MagicSettingsDialog({
         return;
       }
 
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
-      const url = `${API_BASE_URL}/user-settings/my-settings/customization`;
-      const body: any = { customizationConfig: { ovr }, settingname: settingName };
+      const API_BASE_URL =
+        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
+      // backend expects PUT /user-settings/my-settings with body
+      const url = `${API_BASE_URL}/user-settings/my-settings`;
+      const body: any = {
+        customizationConfig: { ovr },
+        settingname: settingName,
+      };
       const res = await fetchWithAuth(url, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error('Save failed');
+      if (!res.ok) throw new Error("Save failed");
       setSavedSnapshot(JSON.stringify(ovr));
       setIsSaved(true);
     } catch (e) {
-      console.error('Error saving overrides to server:', e);
+      console.error("Error saving overrides to server:", e);
     }
   };
 
@@ -91,52 +93,100 @@ export default function MagicSettingsDialog({
         const raw = localStorage.getItem(key);
         if (!raw) return;
         const data = JSON.parse(raw);
-        if (data && typeof data.ovr === 'object') {
+        if (data && typeof data.ovr === "object") {
           setOvr(data.ovr);
           setSavedSnapshot(JSON.stringify(data.ovr));
           setIsSaved(true);
         }
         return;
       }
+      if (role == "admin") {
+        const API_BASE_URL =
+          process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
+        // pass settingname as query param; GET cannot have a body
+        const url = `${API_BASE_URL}/user-settings/my-settings$${""}`.replace(
+          "$",
+          settingName ? `?settingname=${encodeURIComponent(settingName)}` : ""
+        );
+        const res = await fetchWithAuth(url, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (!res.ok) throw new Error("Load failed");
+        const data = await res.json();
+        // server stores customizationConfig as a full object; we expect { ovr } inside
+        const cfg = data?.customizationConfig;
+        if (cfg && cfg.ovr) {
+          setOvr(cfg.ovr);
+          setSavedSnapshot(JSON.stringify(cfg.ovr));
+          setIsSaved(true);
+        }
+      }
 
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
-      const url = `${API_BASE_URL}/user-settings/my-settings`;
-      const res = await fetchWithAuth(url);
-      if (!res.ok) throw new Error('Load failed');
-      const data = await res.json();
-      // server stores customizationConfig as a full object; we expect { ovr } inside
-      const cfg = data?.customizationConfig;
-      if (cfg && cfg.ovr) {
-        setOvr(cfg.ovr);
-        setSavedSnapshot(JSON.stringify(cfg.ovr));
-        setIsSaved(true);
+      if (role != "admin") {
+        const API_BASE_URL =
+          process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
+        // pass settingname as query param; GET cannot have a body
+        const url = `${API_BASE_URL}/user-settings/my-admin-setting$${""}`.replace(
+          "$",
+          settingName ? `?settingname=${encodeURIComponent(settingName)}` : ""
+        );
+        console.log("URL used:", url);
+        const res = await fetchWithAuth(url, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (!res.ok) throw new Error("Load failed");
+        const data = await res.json();
+        // server stores customizationConfig as a full object; we expect { ovr } inside
+        const cfg = data?.customizationConfig;
+        if (cfg && cfg.ovr) {
+          setOvr(cfg.ovr);
+          setSavedSnapshot(JSON.stringify(cfg.ovr));
+          setIsSaved(true);
+        }
       }
     } catch (e) {
-      console.error('Error loading overrides from server:', e);
+      console.error("Error loading overrides from server:", e);
     }
   };
 
   const resetOnServer = async () => {
-    const ok = typeof window !== 'undefined' ? window.confirm('Resettare tutte le personalizzazioni per questo form?') : true;
+    const ok =
+      typeof window !== "undefined"
+        ? window.confirm(
+            "Resettare tutte le personalizzazioni per questo form?"
+          )
+        : true;
     if (!ok) return;
     try {
       if (!fetchWithAuth) {
-        try { localStorage.removeItem(storageKey(userId, formKey)); } catch (e) {}
+        try {
+          localStorage.removeItem(storageKey(userId, formKey));
+        } catch (e) {}
         setOvr({});
         setSavedSnapshot(null);
         setIsSaved(false);
         return;
       }
 
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
-      const url = `${API_BASE_URL}/user-settings/my-settings`;
-      const res = await fetchWithAuth(url, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Reset failed');
+      const API_BASE_URL =
+        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
+      // use query param for the optional setting name
+      const url = `${API_BASE_URL}/user-settings/my-settings$${""}`.replace(
+        "$",
+        settingName ? `?settingname=${encodeURIComponent(settingName)}` : ""
+      );
+      const res = await fetchWithAuth(url, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) throw new Error("Reset failed");
       setOvr({});
       setSavedSnapshot(null);
       setIsSaved(false);
     } catch (e) {
-      console.error('Error resetting overrides on server:', e);
+      console.error("Error resetting overrides on server:", e);
     }
   };
 
@@ -151,8 +201,6 @@ export default function MagicSettingsDialog({
     // try to load from server/local on mount or when userId/formKey change
     loadFromServer();
   }, [userId, formKey]);
-
-
 
   return (
     <div
@@ -233,7 +281,7 @@ export default function MagicSettingsDialog({
                           }
                         >
                           {r.meta.visible ? (
-                            <VisibilityIcon fontSize="small" />
+                            <VisibilityIcon fontSize="small" color="primary" />
                           ) : (
                             <VisibilityOffIcon fontSize="small" />
                           )}
@@ -249,12 +297,37 @@ export default function MagicSettingsDialog({
                           }
                         >
                           {r.meta.disabled ? (
-                            <LockIcon fontSize="small" />
+                            <LockIcon fontSize="small" color="primary" />
                           ) : (
                             <EditIcon fontSize="small" />
                           )}
                         </IconButton>
                       </Tooltip>
+                      {role === "admin" && (
+                        <Tooltip
+                          title={
+                            r.meta.adminlock
+                              ? "Sblocca (admin)"
+                              : "Blocca (admin)"
+                          }
+                        >
+                          <IconButton
+                            size="small"
+                            onClick={() =>
+                              update(r.key, { adminlock: !r.meta.adminlock })
+                            }
+                          >
+                            {r.meta.adminlock ? (
+                              <AdminPanelSettingsIcon
+                                color="primary"
+                                fontSize="small"
+                              />
+                            ) : (
+                              <AdminPanelSettingsIcon fontSize="small" />
+                            )}
+                          </IconButton>
+                        </Tooltip>
+                      )}
                     </Box>
                   </ListItem>
                 ))}

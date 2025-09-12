@@ -8,19 +8,18 @@ export class CreateUserSettingsDto {
   @IsObject()
   customizationConfig?: any;
 
-  @IsOptional()
   @IsString()
-  settingname?: string;
-
+  settingname: string; // obbligatorio: identifica lo setting (es. formKey)
 
 }
 
 export class UpdateUserSettingsDto {
-  @IsOptional()
-  @IsObject()
-  customizationConfig?: any;
-
+  // settingname dovrebbe essere passato quando si aggiorna uno specifico setting
   @IsOptional()
   @IsString()
   settingname?: string;
+
+  @IsOptional()
+  @IsObject()
+  customizationConfig?: any;
 }

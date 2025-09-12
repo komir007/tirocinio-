@@ -18,7 +18,7 @@ type Meta = {
   visible: boolean;
   order: number;
   disabled: boolean;
-  adminOnly?: boolean;
+  adminlock?: boolean;
 };
 type TNode = {
   key: string;
@@ -51,7 +51,7 @@ export default function MagicWrapper({ children, sx = {}, className, ...rest }: 
           visible: typeof props.visible === "boolean" ? props.visible : true,
           order: typeof props.order === "number" ? props.order : idx,
           disabled: typeof props.disabled === "boolean" ? props.disabled : false,
-          adminOnly: typeof props.adminOnly === "boolean" ? props.adminOnly : false,
+          adminlock: typeof props.adminlock === "boolean" ? props.adminlock : false,
         };
         const meta = ovr[key] ? { ...def, ...ovr[key] } : def;
         const children: TNode[] =
