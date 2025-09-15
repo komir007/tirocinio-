@@ -21,7 +21,7 @@ export class UserSettingsService {
     if (settingname) where.settingname = settingname;
     return await this.userSettingsRepository.findOne({
       where,
-      relations: ['user']
+      relations: ['user'] 
     });
   }
 

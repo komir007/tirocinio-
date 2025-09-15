@@ -28,6 +28,13 @@ import SettingsIcon from "@mui/icons-material/Settings";
 
 import { AuthContext } from "../../components/Authcontext";
 
+type Meta = {
+  visible: boolean;
+  order: number;
+  disabled: boolean;
+  adminlock?: boolean;
+};
+
 export default function MagicSettingsDialog({
   Tree,
   ovr,
@@ -49,19 +56,20 @@ export default function MagicSettingsDialog({
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState<boolean>(false);
 
-  const storageKey = (uid?: string, formKey?: string) =>
-    `magic_ovr:${uid || "anon"}:${formKey || "global"}`;
+  /*const storageKey = (uid?: string, formKey?: string) =>
+    `magic_ovr:${uid || "anon"}:${formKey || "global"}`;*/
   // form-specific setting name: use parentId and formKey as requested
   const settingName = formKey;
+  console.log("settingName:", settingName, typeof settingName);
 
   const saveToServer = async () => {
     try {
       if (!fetchWithAuth) {
         // fallback to localStorage for unauthenticated users
-        const key = storageKey(userId, formKey);
+        /*const key = storageKey(userId, formKey);
         localStorage.setItem(key, JSON.stringify({ ovr, savedAt: Date.now() }));
         setSavedSnapshot(JSON.stringify(ovr));
-        setIsSaved(true);
+        setIsSaved(true);*/
         return;
       }
 
@@ -89,6 +97,7 @@ export default function MagicSettingsDialog({
   const loadFromServer = async () => {
     try {
       if (!fetchWithAuth) {
+        /*
         const key = storageKey(userId, formKey);
         const raw = localStorage.getItem(key);
         if (!raw) return;
@@ -97,7 +106,7 @@ export default function MagicSettingsDialog({
           setOvr(data.ovr);
           setSavedSnapshot(JSON.stringify(data.ovr));
           setIsSaved(true);
-        }
+        }*/
         return;
       }
       if (role == "admin") {
@@ -117,20 +126,117 @@ export default function MagicSettingsDialog({
         // server stores customizationConfig as a full object; we expect { ovr } inside
         const cfg = data?.customizationConfig;
         if (cfg && cfg.ovr) {
+          console.log("url server admin", url);
+          console.log("fetchWithAuth", fetchWithAuth);
           setOvr(cfg.ovr);
           setSavedSnapshot(JSON.stringify(cfg.ovr));
           setIsSaved(true);
         }
       }
 
-      if (role != "admin") {
+      if (role === "agent") {
         const API_BASE_URL =
           process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
         // pass settingname as query param; GET cannot have a body
-        const url = `${API_BASE_URL}/user-settings/my-admin-setting$${""}`.replace(
-          "$",
-          settingName ? `?settingname=${encodeURIComponent(settingName)}` : ""
-        );
+        const url_admin =
+          `${API_BASE_URL}/user-settings/my-admin-setting$${""}`.replace(
+            "$",
+            settingName ? `?settingname=${encodeURIComponent(settingName)}` : ""
+          );
+        console.log("URL used:", url_admin);
+        const res = await fetchWithAuth(url_admin, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (!res.ok) throw new Error("Load failed");
+        const data = await res.json();
+        const cfg_admin = data?.customizationConfig;
+
+        const url_agent =
+          `${API_BASE_URL}/user-settings/my-settings$${""}`.replace(
+            "$",
+            settingName ? `?settingname=${encodeURIComponent(settingName)}` : ""
+          );
+        console.log("URL used:", url_agent);
+        const res_agent = await fetchWithAuth(url_agent, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (!res_agent.ok) throw new Error("Load failed");
+        const data_agent = await res_agent.json();
+        const cfg_agent = data_agent?.customizationConfig;
+
+        const adminOverrides = cfg_admin?.ovr || null;
+        const agentOverrides = cfg_agent?.ovr || null;
+        console.log("adminOverrides:", adminOverrides);
+        console.log("agentOverrides:", agentOverrides);
+
+        if (adminOverrides && agentOverrides) {
+          const merged_ovr: Record<string, Meta> = {};
+          const adminO = adminOverrides;
+          const agentO = agentOverrides;
+          const allKeys = new Set<string>([
+            ...Object.keys(adminO),
+            ...Object.keys(agentO),
+          ]);
+
+          allKeys.forEach((k) => {
+            const a = adminO[k];
+            const b = agentO[k];
+            if (a && b) {
+              if (a.adminlock) {
+                merged_ovr[k] = { ...a }; // admin locked: take admin settings fully
+              } else {
+                const agentCopy = { ...b };
+                if (agentCopy.adminlock) agentCopy.adminlock = false; // agent cannot enforce adminlock
+                merged_ovr[k] = { ...a, ...agentCopy }; // agent overrides admin where present
+              }
+            } else if (a) {
+              merged_ovr[k] = { ...a };
+            } else if (b) {
+              const agentCopy = { ...b };
+              if (agentCopy.adminlock) agentCopy.adminlock = false;
+              merged_ovr[k] = agentCopy;
+            }
+          });
+          console.log("[MagicSettingsDialog] merged admin+agent overrides", merged_ovr );
+          setOvr(merged_ovr);
+          setSavedSnapshot(JSON.stringify(merged_ovr));
+          setIsSaved(true);
+          return;
+        } else if (adminOverrides && !agentOverrides) {
+          console.log("[MagicSettingsDialog] only admin overrides present");
+          setOvr(adminOverrides);
+          setSavedSnapshot(JSON.stringify(adminOverrides));
+          setIsSaved(true);
+          return;
+        } else if (agentOverrides && !adminOverrides) {
+          console.log("[MagicSettingsDialog] only agent overrides present");
+          const cleaned: Record<string, any> = {};
+          Object.entries(agentOverrides).forEach(([k, v]: any) => {
+            cleaned[k] = { ...v };
+            if (cleaned[k].adminlock) cleaned[k].adminlock = false;
+          });
+          setOvr(cleaned);
+          setSavedSnapshot(JSON.stringify(cleaned));
+          setIsSaved(true);
+          return;
+        } else {
+          console.log(
+            "[MagicSettingsDialog] no overrides found for agent/admin"
+          );
+        }
+      }
+
+      if (role === "client") {
+        const API_BASE_URL =
+          process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
+        // pass settingname as query param; GET cannot have a body
+        const url =
+          `${API_BASE_URL}/user-settings/my-admin-setting$${""}`.replace(
+            "$",
+            settingName ? `?settingname=${encodeURIComponent(settingName)}` : ""
+          );
         console.log("URL used:", url);
         const res = await fetchWithAuth(url, {
           method: "GET",
@@ -138,7 +244,9 @@ export default function MagicSettingsDialog({
         });
         if (!res.ok) throw new Error("Load failed");
         const data = await res.json();
+
         // server stores customizationConfig as a full object; we expect { ovr } inside
+
         const cfg = data?.customizationConfig;
         if (cfg && cfg.ovr) {
           setOvr(cfg.ovr);
@@ -162,7 +270,7 @@ export default function MagicSettingsDialog({
     try {
       if (!fetchWithAuth) {
         try {
-          localStorage.removeItem(storageKey(userId, formKey));
+          /*localStorage.removeItem(storageKey(userId, formKey));*/
         } catch (e) {}
         setOvr({});
         setSavedSnapshot(null);
@@ -262,47 +370,66 @@ export default function MagicSettingsDialog({
                       sx={{ mr: 2, wordBreak: "break-all" }}
                     />
                     <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                      <TextField
-                        size="small"
-                        type="number"
-                        value={Number.isFinite(r.meta.order) ? r.meta.order : 0}
-                        onChange={(e) =>
-                          update(r.key, {
-                            order: parseInt(e.target.value || "0", 10),
-                          })
-                        }
-                        sx={{ width: 96 }}
-                      />
-                      <Tooltip title={r.meta.visible ? "Nascondi" : "Mostra"}>
-                        <IconButton
-                          size="small"
-                          onClick={() =>
-                            update(r.key, { visible: !r.meta.visible })
-                          }
-                        >
-                          {r.meta.visible ? (
-                            <VisibilityIcon fontSize="small" color="primary" />
-                          ) : (
-                            <VisibilityOffIcon fontSize="small" />
-                          )}
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip
-                        title={r.meta.disabled ? "Sblocca" : "Disabilita"}
-                      >
-                        <IconButton
-                          size="small"
-                          onClick={() =>
-                            update(r.key, { disabled: !r.meta.disabled })
-                          }
-                        >
-                          {r.meta.disabled ? (
-                            <LockIcon fontSize="small" color="primary" />
-                          ) : (
-                            <EditIcon fontSize="small" />
-                          )}
-                        </IconButton>
-                      </Tooltip>
+                      {(() => {
+                        const locked = !!r.meta.adminlock && role !== "admin";
+                        const faded = locked
+                          ? { opacity: 0.4, pointerEvents: "none" }
+                          : {};
+                        return (
+                          <>
+                            <Tooltip
+                              title={r.meta.visible ? "Nascondi" : "Mostra"}
+                            >
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  disabled={locked}
+                                  onClick={() =>
+                                    !locked &&
+                                    update(r.key, { visible: !r.meta.visible })
+                                  }
+                                  sx={faded}
+                                >
+                                  {r.meta.visible ? (
+                                    <VisibilityIcon
+                                      fontSize="small"
+                                      color="primary"
+                                    />
+                                  ) : (
+                                    <VisibilityOffIcon fontSize="small" />
+                                  )}
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                            <Tooltip
+                              title={r.meta.disabled ? "Sblocca" : "Disabilita"}
+                            >
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  disabled={locked}
+                                  onClick={() =>
+                                    !locked &&
+                                    update(r.key, {
+                                      disabled: !r.meta.disabled,
+                                    })
+                                  }
+                                  sx={faded}
+                                >
+                                  {r.meta.disabled ? (
+                                    <LockIcon
+                                      fontSize="small"
+                                      color="primary"
+                                    />
+                                  ) : (
+                                    <EditIcon fontSize="small" />
+                                  )}
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                          </>
+                        );
+                      })()}
                       {role === "admin" && (
                         <Tooltip
                           title={
@@ -328,6 +455,39 @@ export default function MagicSettingsDialog({
                           </IconButton>
                         </Tooltip>
                       )}
+                      {role === "agent" && r.meta.adminlock && (
+                        <Tooltip
+                          title={
+                            r.meta.adminlock
+                              ? "Sblocca (admin)"
+                              : "Blocca (admin)"
+                          }
+                        >
+                          <AdminPanelSettingsIcon
+                            color="warning"
+                            fontSize="small"
+                          />
+                        </Tooltip>
+                      )}
+                      {(() => {
+                        const locked = !!r.meta.adminlock && role !== "admin";
+                        return (
+                          <TextField
+                            size="small"
+                            type="number"
+                            value={
+                              Number.isFinite(r.meta.order) ? r.meta.order : 0
+                            }
+                            onChange={(e) =>
+                              update(r.key, {
+                                order: parseInt(e.target.value || "0", 10),
+                              })
+                            }
+                            sx={{ width: 96, opacity: locked ? 0.4 : 1 }}
+                            disabled={locked}
+                          />
+                        );
+                      })()}
                     </Box>
                   </ListItem>
                 ))}

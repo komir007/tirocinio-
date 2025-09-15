@@ -182,7 +182,7 @@ export class UserSettingsController {
     try {
       const userIdRaw = req.user.userId; // CORRETTO: usa userId invece di sub
       this.logger.log(
-        `Deleting settings for raw userId: ${userIdRaw} (type: ${typeof userIdRaw}, settingsname: ${req.body.settingname})`,
+        `Deleting settings for raw userId: ${userIdRaw} (type: ${typeof userIdRaw}, settingsname: ${settingname})`,
       );
 
       // Converti userId a numero se è una stringa
