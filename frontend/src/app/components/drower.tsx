@@ -358,7 +358,7 @@ export default function ResponsiveDrawer(props: Props) {
         component="main"
         sx={{
           flexGrow: 1,
-          bgcolor: "grey.100",
+          //bgcolor: "grey.100",
           height: "calc(100vh - 92px)",
           width: `calc(100% - ${currentWidth}px)`,
           mt: `${appBarHeight}px`,

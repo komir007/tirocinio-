@@ -70,6 +70,7 @@ export default function MagicSettingsDialog({
         localStorage.setItem(key, JSON.stringify({ ovr, savedAt: Date.now() }));
         setSavedSnapshot(JSON.stringify(ovr));
         setIsSaved(true);*/
+        console.error("No fetchWithAuth available");
         return;
       }
 
@@ -81,6 +82,7 @@ export default function MagicSettingsDialog({
         customizationConfig: { ovr },
         settingname: settingName,
       };
+      console.log("Saving to server URL:", ovr, url, body);
       const res = await fetchWithAuth(url, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -107,6 +109,7 @@ export default function MagicSettingsDialog({
           setSavedSnapshot(JSON.stringify(data.ovr));
           setIsSaved(true);
         }*/
+        console.error("No fetchWithAuth available");
         return;
       }
       if (role == "admin") {
@@ -166,8 +169,8 @@ export default function MagicSettingsDialog({
         const data_agent = await res_agent.json();
         const cfg_agent = data_agent?.customizationConfig;
 
-        const adminOverrides = cfg_admin?.ovr || null;
-        const agentOverrides = cfg_agent?.ovr || null;
+        const adminOverrides: Record<string, Meta> | null = cfg_admin?.ovr || null;
+        const agentOverrides: Record<string, Meta> | null = cfg_agent?.ovr || null;
         console.log("adminOverrides:", adminOverrides);
         console.log("agentOverrides:", agentOverrides);
 
@@ -180,7 +183,14 @@ export default function MagicSettingsDialog({
             ...Object.keys(agentO),
           ]);
 
+          console.log("allKeys:", allKeys);
+
           allKeys.forEach((k) => {
+            console.log("Merging key:", k);
+            console.log(" adminO[k]:", adminO[k]);
+            console.log(" agentO[k]:", agentO[k]);
+            // merge logic: if adminlock is set in admin, take admin fully; else agent can override
+            // if only one side has it, take that (but agent cannot enforce adminlock)
             const a = adminO[k];
             const b = agentO[k];
             if (a && b) {
@@ -212,14 +222,15 @@ export default function MagicSettingsDialog({
           return;
         } else if (agentOverrides && !adminOverrides) {
           console.log("[MagicSettingsDialog] only agent overrides present");
-          const cleaned: Record<string, any> = {};
-          Object.entries(agentOverrides).forEach(([k, v]: any) => {
+          const cleaned: Record<string, Meta> = {};
+          Object.entries(agentOverrides).forEach(([k, v] : [string, Meta]) => {
             cleaned[k] = { ...v };
             if (cleaned[k].adminlock) cleaned[k].adminlock = false;
           });
           setOvr(cleaned);
           setSavedSnapshot(JSON.stringify(cleaned));
           setIsSaved(true);
+          console.log("ovr-----------------", ovr);
           return;
         } else {
           console.log(
