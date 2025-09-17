@@ -36,21 +36,14 @@ export class UserSettingsController {
   @Get('my-settings')
   async getMySettings(@Request() req, @Query('settingname') settingname?: string) {
     try {
-      const userIdRaw = req.user.userId; // CORRETTO: usa userId invece di sub
+      const userId = req.user.userId; // CORRETTO: usa userId invece di sub
       this.logger.log(
-        `Getting settings for raw userId: ${userIdRaw} (type: ${typeof userIdRaw})`,
+        `Getting settings for userId: ${userId}`,
       );
-
-      this.logger.log(`Using userId: ${req.user.userId}`);
-      this.logger.log(`Using parentId: ${req.user.parentId}`);
-
-      // Converti userId a numero se è una stringa
-      const userId =
-        typeof userIdRaw === 'string' ? parseInt(userIdRaw, 10) : userIdRaw;
 
       if (!userId || isNaN(userId)) {
         this.logger.error(
-          `Invalid user ID after parsing: ${userId} (original: ${userIdRaw})`,
+          `Invalid user ID after parsing: ${userId}`,
         );
         throw new BadRequestException('Invalid user ID');
       }
@@ -60,7 +53,7 @@ export class UserSettingsController {
         userId,
         settingname,
       );
-      console.log("Settings fetched--------------:", settings);
+      
       return settings || { customizationConfig: null };
     } catch (error) {
       this.logger.error('Error getting user settings:', error);
@@ -68,57 +61,17 @@ export class UserSettingsController {
     }
   }
 
-  @Put('my-settings/OLD')
-  async updateMySettings(
-    @Request() req,
-    @Body() updateDto: UpdateUserSettingsDto,
-  ) {
-    try {
-      const userIdRaw = req.user.userId; // CORRETTO: usa userId invece di sub
-      this.logger.log(
-        `Updating settings for raw userId: ${userIdRaw} (type: ${typeof userIdRaw})`,
-      );
-
-      // Converti userId a numero se è una stringa
-      const userId =
-        typeof userIdRaw === 'string' ? parseInt(userIdRaw, 10) : userIdRaw;
-
-      if (!userId || isNaN(userId)) {
-        this.logger.error(
-          `Invalid user ID after parsing: ${userId} (original: ${userIdRaw})`,
-        );
-        throw new BadRequestException('Invalid user ID');
-      }
-
-      this.logger.log(`Using parsed userId: ${userId}`);
-      // Ensure settingname is provided either in body or inside updateDto
-      const settingname = updateDto?.settingname || req.body?.settingname;
-      return await this.userSettingsService.updateByUserId(
-        userId,
-        updateDto,
-        settingname,
-      );
-    } catch (error) {
-      this.logger.error('Error updating user settings:', error);
-      throw error;
-    }
-  }
-
   @Put('my-settings')
   async updateMyCustomization(@Request() req, @Body() body: any) {
     try {
-      const userIdRaw = req.user.userId; // CORRETTO: usa userId invece di sub
+      const userId = req.user.userId; // CORRETTO: usa userId invece di sub
       this.logger.log(
-        `Updating customization for raw userId: ${userIdRaw} (type: ${typeof userIdRaw})`,
+        `Updating customization for raw userId: ${userId}`,
       );
-
-      // Converti userId a numero se è una stringa
-      const userId =
-        typeof userIdRaw === 'string' ? parseInt(userIdRaw, 10) : userIdRaw;
 
       if (!userId || isNaN(userId)) {
         this.logger.error(
-          `Invalid user ID after parsing: ${userId} (original: ${userIdRaw})`,
+          `Invalid user ID after parsing: ${userId}`,
         );
         throw new BadRequestException('Invalid user ID');
       }
@@ -131,9 +84,7 @@ export class UserSettingsController {
 
       // Optional settingname support: client may pass settingname to identify the form (fromKey)
       const settingname =
-        typeof body.settingname === 'string' && body.settingname.length > 0
-          ? body.settingname
-          : undefined;
+        typeof body.settingname === 'string' && body.settingname.length > 0 ? body.settingname : undefined;
 
       this.logger.log(
         `Using parsed userId: ${userId} for customization update, settingname: ${settingname}`,
@@ -162,14 +113,6 @@ export class UserSettingsController {
     const adminId = req.user.parentId;
     if (!adminId) throw new BadRequestException('Invalid admin id');
 
-    // solo admin o agent/client che hanno parentId uguale possono richiedere
-    const requesterIdRaw = req.user.userId;
-    const requesterId =
-      typeof requesterIdRaw === 'string'
-        ? parseInt(requesterIdRaw, 10)
-        : requesterIdRaw;
-    const role = req.user.role;
-
     const settings = await this.userSettingsService.findByUserId(
       adminId,
       settingname,
@@ -180,18 +123,14 @@ export class UserSettingsController {
   @Delete('my-settings')
   async deleteMySettings(@Request() req, @Query('settingname') settingname?: string) {
     try {
-      const userIdRaw = req.user.userId; // CORRETTO: usa userId invece di sub
+      const userId = req.user.userId; // CORRETTO: usa userId invece di sub
       this.logger.log(
-        `Deleting settings for raw userId: ${userIdRaw} (type: ${typeof userIdRaw}, settingsname: ${settingname})`,
+        `Deleting settings for userId: ${userId}, settingsname: ${settingname})`,
       );
-
-      // Converti userId a numero se è una stringa
-      const userId =
-        typeof userIdRaw === 'string' ? parseInt(userIdRaw, 10) : userIdRaw;
 
       if (!userId || isNaN(userId)) {
         this.logger.error(
-          `Invalid user ID after parsing: ${userId} (original: ${userIdRaw})`,
+          `Invalid user ID after parsing: ${userId}`,
         );
         throw new BadRequestException('Invalid user ID');
       }
@@ -204,8 +143,8 @@ export class UserSettingsController {
         return { message: `Settings for ${settingname} deleted successfully` };
       }
 
-      await this.userSettingsService.remove(userId);
-      return { message: 'All settings deleted successfully' };
+      //await this.userSettingsService.remove(userId);
+      //return { message: 'All settings deleted successfully' };
     } catch (error) {
       this.logger.error('Error deleting user settings:', error);
       throw error;

@@ -14,13 +14,14 @@ import MagicSettingsDialog from "./MagicSettingsDialog";
 import IconButton from "@mui/material/IconButton";
 import SettingsIcon from "@mui/icons-material/Settings";
 
-type Meta = {
+export type Meta = {
   visible: boolean;
   order: number;
   disabled: boolean;
   adminlock?: boolean;
 };
-type TNode = {
+
+export type TNode = {
   key: string;
   meta: Meta;
   node: ReactNode;
@@ -119,29 +120,7 @@ export default function MagicWrapper({ children, sx = {}, className, ...rest }: 
     });
   };
 
-  // Flat list for quick controls
-  const list = useMemo(() => {
-    const out: Array<{ key: string; depth: number; meta: Meta }> = [];
-    const walk = (nodes: TNode[], depth: number) => {
-      nodes.forEach((n) => {
-        // include only element nodes whose key starts with the specified prefixes
-        const keyLower = (n.key || "").toLowerCase();
-        if (
-          n.isEl &&
-          (keyLower.startsWith("form") ||
-            keyLower.startsWith("sezione") ||
-            keyLower.startsWith("field"))
-        ) {
-          out.push({ key: n.key, depth, meta: n.meta });
-        }
-        if (n.children?.length) walk(n.children, depth + 1);
-      });
-    };
-    walk(tree, 0);
-    console.log("Flat list:", out);
-    console.log("rendered:", render(tree));
-    return out;
-  }, [tree]);
+  
 
   // derive a form key from the tree (first node whose key starts with 'form')
   const formKey = useMemo(() => {
@@ -162,8 +141,7 @@ export default function MagicWrapper({ children, sx = {}, className, ...rest }: 
   // NOTE: save/load are handled inside the dialog. The wrapper keeps ovr and
   // passes formKey + userId so the dialog can compute storage keys.
 
-  const update = (key: string, patch: Partial<Meta>) =>
-    setOvr((p) => ({ ...p, [key]: { ...(p[key] ?? {}), ...patch } }));
+
 
   return (
     <Box
@@ -195,9 +173,8 @@ export default function MagicWrapper({ children, sx = {}, className, ...rest }: 
             tree={tree}
             ovr={ovr}
             setOvr={setOvr}
-            update={update}
-            list={list}
             formKey={formKey}
+            render={render}
           />
         </div>
       </div>

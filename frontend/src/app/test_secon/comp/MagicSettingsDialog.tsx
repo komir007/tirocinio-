@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useContext } from "react";
+import React, { useState, useRef, useContext, useMemo } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -27,27 +27,21 @@ import EditIcon from "@mui/icons-material/Edit";
 import SettingsIcon from "@mui/icons-material/Settings";
 
 import { AuthContext } from "../../components/Authcontext";
+import { TNode, Meta } from "./MagicWrapper";
 
-type Meta = {
-  visible: boolean;
-  order: number;
-  disabled: boolean;
-  adminlock?: boolean;
-};
 
 export default function MagicSettingsDialog({
-  Tree,
+  tree,
   ovr,
   setOvr,
   formKey,
-  update,
-  list,
+  render,
 }: any) {
   const authContext = useContext(AuthContext);
   const fetchWithAuth = authContext?.fetchWithAuth;
   const userId = authContext?.user?.id;
   const role = authContext?.user?.role;
-  const parentId = authContext?.user?.parentId;
+ const parentid = authContext?.user?.parentId;
 
   const [open, setOpen] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
@@ -61,6 +55,11 @@ export default function MagicSettingsDialog({
   // form-specific setting name: use parentId and formKey as requested
   const settingName = formKey;
   console.log("settingName:", settingName, typeof settingName);
+
+    React.useEffect(() => {
+    // try to load from server/local on mount or when userId/formKey change
+    loadFromServer();
+  }, [userId, formKey]);
 
   const saveToServer = async () => {
     try {
@@ -169,8 +168,10 @@ export default function MagicSettingsDialog({
         const data_agent = await res_agent.json();
         const cfg_agent = data_agent?.customizationConfig;
 
-        const adminOverrides: Record<string, Meta> | null = cfg_admin?.ovr || null;
-        const agentOverrides: Record<string, Meta> | null = cfg_agent?.ovr || null;
+        const adminOverrides: Record<string, Meta> | null =
+          cfg_admin?.ovr || null;
+        const agentOverrides: Record<string, Meta> | null =
+          cfg_agent?.ovr || null;
         console.log("adminOverrides:", adminOverrides);
         console.log("agentOverrides:", agentOverrides);
 
@@ -209,7 +210,10 @@ export default function MagicSettingsDialog({
               merged_ovr[k] = agentCopy;
             }
           });
-          console.log("[MagicSettingsDialog] merged admin+agent overrides", merged_ovr );
+          console.log(
+            "[MagicSettingsDialog] merged admin+agent overrides",
+            merged_ovr
+          );
           setOvr(merged_ovr);
           setSavedSnapshot(JSON.stringify(merged_ovr));
           setIsSaved(true);
@@ -223,7 +227,7 @@ export default function MagicSettingsDialog({
         } else if (agentOverrides && !adminOverrides) {
           console.log("[MagicSettingsDialog] only agent overrides present");
           const cleaned: Record<string, Meta> = {};
-          Object.entries(agentOverrides).forEach(([k, v] : [string, Meta]) => {
+          Object.entries(agentOverrides).forEach(([k, v]: [string, Meta]) => {
             cleaned[k] = { ...v };
             if (cleaned[k].adminlock) cleaned[k].adminlock = false;
           });
@@ -283,9 +287,10 @@ export default function MagicSettingsDialog({
         try {
           /*localStorage.removeItem(storageKey(userId, formKey));*/
         } catch (e) {}
-        setOvr({});
+        /*setOvr({});
         setSavedSnapshot(null);
-        setIsSaved(false);
+        setIsSaved(false);*/
+        console.error("No fetchWithAuth available");
         return;
       }
 
@@ -309,6 +314,35 @@ export default function MagicSettingsDialog({
     }
   };
 
+  const list = useMemo(() => {
+    const out: Array<{ key: string; depth: number; meta: Meta }> = [];
+    const walk = (nodes: TNode[], depth: number) => {
+      nodes.forEach((n) => {
+        // include only element nodes whose key starts with the specified prefixes
+        const keyLower = (n.key || "").toLowerCase();
+        if (
+          n.isEl &&
+          (keyLower.startsWith("form") ||
+            keyLower.startsWith("sezione") ||
+            keyLower.startsWith("field"))
+        ) {
+          out.push({ key: n.key, depth, meta: n.meta });
+        }
+        if (n.children?.length) walk(n.children, depth + 1);
+      });
+    };
+    walk(tree, 0);
+    console.log("Flat list:", out);
+    console.log("rendered:", render(tree));
+    return out;
+  }, [tree]);
+
+  const update = (key: string, patch: Partial<Meta>) => {
+    setOvr((p: Record<string, Meta>) => ({
+      ...p,
+      [key]: { ...(p[key] ?? {}), ...patch },
+    }));
+  };
   // track dirty state when overrides change
   React.useEffect(() => {
     const cur = JSON.stringify(ovr);

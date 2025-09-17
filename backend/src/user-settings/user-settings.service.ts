@@ -19,6 +19,7 @@ export class UserSettingsService {
   async findByUserId(userId: number, settingname?: string): Promise<UserSettings | null> {
     const where: any = { userId };
     if (settingname) where.settingname = settingname;
+    console.log(`Finding settings with criteria: ${JSON.stringify(where)}`);
     return await this.userSettingsRepository.findOne({
       where,
       relations: ['user'] 
@@ -49,12 +50,12 @@ export class UserSettingsService {
     return userSettings;
   }
 
-  async remove(userId: number): Promise<void> {
+  /*async remove(userId: number): Promise<void> {
     const result = await this.userSettingsRepository.delete({ userId });
     if (result.affected === 0) {
       throw new NotFoundException(`User settings for user ${userId} not found`);
     }
-  }
+  }*/
 
   // Rimuove la configurazione specifica (userId + settingname)
   async removeByUserIdAndSetting(userId: number, settingname: string): Promise<void> {
