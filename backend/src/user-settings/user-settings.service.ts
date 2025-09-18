@@ -17,25 +17,22 @@ export class UserSettingsService {
   }
 
   async findByUserId(userId: number, settingname?: string): Promise<UserSettings | null> {
-    const where: any = { userId };
-    if (settingname) where.settingname = settingname;
-    console.log(`Finding settings with criteria: ${JSON.stringify(where)}`);
+    const where: any = {};
+    where.userId = userId;
+    where.settingname = settingname;
+    if (!settingname) {
+      console.log(`Finding settings with criteria: ${JSON.stringify(where)}`);
+    }
     return await this.userSettingsRepository.findOne({
-      where,
-      relations: ['user'] 
+      where
     });
-  }
-
-  // wrapper esplicito: trova lo setting specifico per user + settingname
-  async findByUserIdAndSetting(adminId: number, settingname: string): Promise<UserSettings | null> {
-    return this.findByUserId(adminId, settingname);
   }
 
   async updateByUserId(userId: number, updateUserSettingsDto: UpdateUserSettingsDto, settingname?: string): Promise<UserSettings> {
     let userSettings = await this.findByUserId(userId, settingname);
 
     if (!userSettings) {
-      // Assicurati che userId e settingname siano inclusi quando si crea un nuovo record
+      // userSettings non esistono, creane uno nuovo
       userSettings = await this.create({
         userId,
         settingname: settingname || updateUserSettingsDto?.settingname || 'default',
@@ -50,14 +47,6 @@ export class UserSettingsService {
     return userSettings;
   }
 
-  /*async remove(userId: number): Promise<void> {
-    const result = await this.userSettingsRepository.delete({ userId });
-    if (result.affected === 0) {
-      throw new NotFoundException(`User settings for user ${userId} not found`);
-    }
-  }*/
-
-  // Rimuove la configurazione specifica (userId + settingname)
   async removeByUserIdAndSetting(userId: number, settingname: string): Promise<void> {
     const result = await this.userSettingsRepository.delete({ userId, settingname });
     if (result.affected === 0) {
@@ -67,7 +56,7 @@ export class UserSettingsService {
     }
   }
 
-  // CORRETTO: Metodo per aggiornare solo le configurazioni di customizzazione
+  
   async updateCustomizationConfig(userId: number, customizationConfig: any, settingname?: string): Promise<UserSettings> {
     console.log('Updating customization config for userId:', userId, 'with config:', customizationConfig);
     
@@ -79,3 +68,16 @@ export class UserSettingsService {
   return await this.updateByUserId(userId, { customizationConfig }, settingname);
   }
 }
+
+
+  /*async remove(userId: number): Promise<void> {
+  const result = await this.userSettingsRepository.delete({ userId });
+  if (result.affected === 0) {
+    throw new NotFoundException(`User settings for user ${userId} not found`);
+    }
+  }*/
+
+      // wrapper esplicito: trova lo setting specifico per user + settingname
+  /*async findByUserIdAndSetting(adminId: number, settingname: string): Promise<UserSettings | null> {
+    return this.findByUserId(adminId, settingname);
+  }*/

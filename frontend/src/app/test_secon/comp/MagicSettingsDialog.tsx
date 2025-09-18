@@ -41,12 +41,12 @@ export default function MagicSettingsDialog({
   const fetchWithAuth = authContext?.fetchWithAuth;
   const userId = authContext?.user?.id;
   const role = authContext?.user?.role;
- const parentid = authContext?.user?.parentId;
 
   const [open, setOpen] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement | null>(null);
+ 
   // internal saved state and dirty tracking
+
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState<boolean>(false);
 
@@ -75,7 +75,7 @@ export default function MagicSettingsDialog({
 
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
-      // backend expects PUT /user-settings/my-settings with body
+      // backend PUT /user-settings/my-settings with body
       const url = `${API_BASE_URL}/user-settings/my-settings`;
       const body: any = {
         customizationConfig: { ovr },

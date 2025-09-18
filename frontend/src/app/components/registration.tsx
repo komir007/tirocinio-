@@ -14,6 +14,7 @@ import Alert from "@mui/material/Alert";
 import { Divider, IconButton } from "@mui/material";
 import { Settings as SettingsIcon } from "@mui/icons-material";
 import MagicWrapper from "../test_secon/comp/MagicWrapper";
+import { grey } from "@mui/material/colors";
 
 export default function Registration() {
   const authContext = useContext(AuthContext);
@@ -88,7 +89,7 @@ export default function Registration() {
           width: "100%",
           maxWidth: "100vw",
           height: "auto", // <-- evitare che Paper espanda la pagina
-          maxHeight: "60vh", // <-- limita l'altezza complessiva (regola a piacere)
+          maxHeight: "auto", // <-- limita l'altezza complessiva (regola a piacere)
           borderRadius: 3,
           bgcolor: "#fff",
           display: "flex",
@@ -118,17 +119,22 @@ export default function Registration() {
               flexDirection="column"
               gap={2}
               m={2}
+              border={1}
+              borderColor="grey.300"
+              borderRadius={2}
+              p={2}
+              bgcolor="grey.50"
             >
               <Typography variant="subtitle1">
                 Informazioni anagrafiche
               </Typography>
               <Box
                 key="1"
-                display="flex"
-                flexDirection={{ xs: "column", sm: "row" }}
-                width={{ xs: "100%", sm: "50%" }}
                 gap={2}
-                sx={{ display: "flex", flexDirection: "row" }} // Per supportare order
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" },
+                }} // Per supportare order
               >
                 <TextField
                   id="f-name"
@@ -142,6 +148,7 @@ export default function Registration() {
                   sx={{
                     flex: 1,
                     "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                    backgroundColor: "white",
                   }}
                 />
 
@@ -157,12 +164,11 @@ export default function Registration() {
                   sx={{
                     flex: 1,
                     "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                    backgroundColor: "white",
                   }}
                 />
               </Box>
-              <Divider />
             </Box>
-
 
             <Box
               id="sezione_accesso"
@@ -171,14 +177,21 @@ export default function Registration() {
               flexDirection="column"
               gap={2}
               m={2}
+              border={1}
+              borderColor="grey.300"
+              borderRadius={2}
+              p={2}
+              bgcolor="grey.50"
             >
               <Typography variant="subtitle1">Accesso</Typography>
               <Box
                 key="2"
                 display="flex"
-                flexDirection={{ xs: "column", sm: "row" }}
                 gap={2}
-                sx={{ display: "flex", flexDirection: "row" }} // Per supportare order
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" },
+                }} // Per supportare order
               >
                 <TextField
                   id="f-email"
@@ -193,6 +206,7 @@ export default function Registration() {
                   sx={{
                     flex: 1,
                     "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                    backgroundColor: "white",
                   }}
                 />
 
@@ -209,10 +223,10 @@ export default function Registration() {
                   sx={{
                     flex: 1,
                     "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                    backgroundColor: "white",
                   }}
                 />
               </Box>
-              <Divider />
             </Box>
 
             <Box
@@ -222,6 +236,11 @@ export default function Registration() {
               display="flex"
               flexDirection="column"
               gap={2}
+              border={1}
+              borderColor="grey.300"
+              borderRadius={2}
+              p={2}
+              bgcolor="grey.50"
             >
               <Typography variant="subtitle1">Ruolo</Typography>
               <Box
@@ -244,6 +263,7 @@ export default function Registration() {
                     sx={{
                       flex: 1,
                       "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                      backgroundColor: "white",
                     }}
                   >
                     <MenuItem value="admin">Admin</MenuItem>
@@ -252,13 +272,10 @@ export default function Registration() {
                   </TextField>
                 )}
               </Box>
-              <Divider />
             </Box>
           </Box>
         </MagicWrapper>
-        <Box sx={{ height: "100%" }}>
-
-        </Box>
+        <Box sx={{ maxHeight: "100%" }} />
         {/* footer / bottoni rimangono fissi sotto e NON scrollano */}
         <Divider />
         <Box display="flex" p={2} justifyContent="flex-end" gap={2}>

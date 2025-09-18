@@ -61,12 +61,16 @@ export class UserSettingsController {
     }
   }
 
+  // -------------------
+  // PUT (current user)/create if not exists
+  // -------------------
+
   @Put('my-settings')
   async updateMyCustomization(@Request() req, @Body() body: any) {
     try {
-      const userId = req.user.userId; // CORRETTO: usa userId invece di sub
+      const userId = req.user.userId;
       this.logger.log(
-        `Updating customization for raw userId: ${userId}`,
+        `Updating customization for userId: ${userId}`,
       );
 
       if (!userId || isNaN(userId)) {
@@ -82,7 +86,6 @@ export class UserSettingsController {
         );
       }
 
-      // Optional settingname support: client may pass settingname to identify the form (fromKey)
       const settingname =
         typeof body.settingname === 'string' && body.settingname.length > 0 ? body.settingname : undefined;
 
@@ -105,8 +108,9 @@ export class UserSettingsController {
     }
   }
 
-  // admin-only field restrictions endpoint removed; admin restrictions are now handled inside customizationConfig
-
+  // -------------------
+  // GET (admin user)
+  // -------------------
   // Recupera la config di un admin specifico (usato da agent per import)
   @Get('my-admin-setting')
   async getAdminConfig(@Request() req, @Query('settingname') settingname?: string) {
@@ -120,6 +124,9 @@ export class UserSettingsController {
     return settings || { customizationConfig: null };
   }
 
+  // -------------------
+  // DELETE (current user)
+  // -------------------
   @Delete('my-settings')
   async deleteMySettings(@Request() req, @Query('settingname') settingname?: string) {
     try {
@@ -138,7 +145,7 @@ export class UserSettingsController {
       if (settingname) {
         await this.userSettingsService.removeByUserIdAndSetting(
           userId,
-          String(settingname),
+          settingname
         );
         return { message: `Settings for ${settingname} deleted successfully` };
       }
