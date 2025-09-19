@@ -4,6 +4,9 @@ import { Box, Button, Chip, TextField } from '@mui/material';
 
 import MagicWrapper from '@/app/test_secon/comp/MagicWrapper';
 
+
+
+
 export default function Demo() {
   return (
     <MagicWrapper>
@@ -16,6 +19,7 @@ export default function Demo() {
         justifyContent="center"
         alignItems="center"
       >
+        
         <Box
           key={"sezione_1"}
           m={10}
@@ -28,6 +32,7 @@ export default function Demo() {
           <TextField key="field_1" label="Primo" />
           <TextField key="field_2" label="Secondo" />
         </Box>
+      
         <Box
           key={"sezione_2"}
           m={10}
@@ -41,6 +46,7 @@ export default function Demo() {
           <TextField key="field_4" variant="outlined" label="Quarto" />
           <TextField key="field_5" variant="filled" label="Quinto" />
         </Box>
+       
       </Box>
     </MagicWrapper>
   );

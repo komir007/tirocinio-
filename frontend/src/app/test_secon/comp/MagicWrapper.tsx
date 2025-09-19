@@ -9,10 +9,7 @@ import React, {
   use,
 } from "react";
 import Box from "@mui/material/Box";
-import { AuthContext } from "../../components/Authcontext";
 import MagicSettingsDialog from "./MagicSettingsDialog";
-import IconButton from "@mui/material/IconButton";
-import SettingsIcon from "@mui/icons-material/Settings";
 
 export type Meta = {
   visible: boolean;
@@ -29,11 +26,15 @@ export type TNode = {
   children: TNode[];
 };
 
-export default function MagicWrapper({ children, sx = {}, className, ...rest }: { children: ReactNode; sx?: any; className?: string; [k: string]: any; }) {
-  const authContext = useContext(AuthContext);
-  const userId = authContext?.user?.id;
-  const role = authContext?.user?.role;
-  const parentid = authContext?.user?.parentId;
+export default function MagicWrapper({
+  children,
+  sx = {},
+  ...rest
+}: {
+  children: ReactNode;
+  sx?: any;
+  [k: string]: any;
+}) {
   const [ovr, setOvr] = useState<Record<string, Meta>>({});
 
   // Build a simple tree from children, mixing defaults (props) with overrides
@@ -64,6 +65,7 @@ export default function MagicWrapper({ children, sx = {}, className, ...rest }: 
   }, [children, ovr]);
 
   // Log minimal structure
+  /*
   useEffect(() => {
     const slim = (nodes: any[]): any[] =>
       nodes.map((n) => ({ key: n.key, ...n.meta, children: slim(n.children) }));
@@ -74,6 +76,7 @@ export default function MagicWrapper({ children, sx = {}, className, ...rest }: 
     console.log("ovr_json:", JSON.stringify(ovr));
     console.log("children:", children);
   }, [tree, ovr]);
+  */
 
   // Render applying visibility + order; keep elements unchanged otherwise
   const render = (nodes: TNode[]): ReactNode => {
@@ -92,12 +95,13 @@ export default function MagicWrapper({ children, sx = {}, className, ...rest }: 
       if (n.meta.disabled) {
         const el = n.node as ReactElement;
         const type = el?.type;
-        const isIntrinsic = typeof type === "string";
+        //const isIntrinsic = typeof type === "string";
 
         const existingStyle = (el.props as any)?.style || {};
         extra.style = { ...existingStyle, opacity: 0.6 };
+        extra.style.pointerEvents = "none";
 
-        if (!isIntrinsic) {
+        /* if (!isIntrinsic) {
           extra.style.pointerEvents = "none";
         } else {
           const nativeControls = [
@@ -110,9 +114,8 @@ export default function MagicWrapper({ children, sx = {}, className, ...rest }: 
             "optgroup",
           ];
           if (nativeControls.includes(type as string)) extra.disabled = true;
-        }
+        }*/
       }
-
       return React.cloneElement(n.node as ReactElement, {
         ...extra,
         children: childOut,
@@ -120,43 +123,18 @@ export default function MagicWrapper({ children, sx = {}, className, ...rest }: 
     });
   };
 
-  
-
-  // derive a form key from the tree (first node whose key starts with 'form')
-  const formKey = useMemo(() => {
-    const find = (nodes: TNode[]): string | null => {
-      for (const n of nodes) {
-        const k = (n.key || "").toLowerCase();
-        if (k.startsWith("form")) return n.key;
-        if (n.children?.length) {
-          const c = find(n.children);
-          if (c) return c;
-        }
-      }
-      return null;
-    };
-    return find(tree) || "global";
-  }, [tree]);
-
-  // NOTE: save/load are handled inside the dialog. The wrapper keeps ovr and
-  // passes formKey + userId so the dialog can compute storage keys.
-
-
-
   return (
     <Box
-      className={className}
       sx={{
         display: "flex",
         flexDirection: "column",
-        flex: "1 1 auto", // permette al wrapper di ridursi/espandersi nel parent flex
-        minHeight: 0,     // CRUCIALE: abilita lo scroll interno del figlio
-        // non impostare overflow qui: lasciare che il form decida dove scrollare
+        flex: "1 1 auto", 
+        minHeight: 0,
         ...sx,
       }}
       {...rest}
     >
-      <div
+      <Box
         style={{
           position: "sticky",
           top: 0,
@@ -166,18 +144,12 @@ export default function MagicWrapper({ children, sx = {}, className, ...rest }: 
           marginBottom: 8,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Box width="100%"></Box>
           <strong>Custom</strong>
-          <MagicSettingsDialog
-            tree={tree}
-            ovr={ovr}
-            setOvr={setOvr}
-            formKey={formKey}
-            render={render}
-          />
-        </div>
-      </div>
+          <MagicSettingsDialog tree={tree} ovr={ovr} setOvr={setOvr} />
+        </Box>
+      </Box>
       {render(tree)}
     </Box>
   );

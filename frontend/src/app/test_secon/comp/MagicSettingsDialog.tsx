@@ -17,6 +17,7 @@ import {
   TextField,
   Divider,
   Tooltip,
+  Snackbar,
 } from "@mui/material";
 
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
@@ -29,22 +30,16 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { AuthContext } from "../../components/Authcontext";
 import { TNode, Meta } from "./MagicWrapper";
 
-
-export default function MagicSettingsDialog({
-  tree,
-  ovr,
-  setOvr,
-  formKey,
-  render,
-}: any) {
+export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
   const authContext = useContext(AuthContext);
   const fetchWithAuth = authContext?.fetchWithAuth;
   const userId = authContext?.user?.id;
   const role = authContext?.user?.role;
 
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
   const [open, setOpen] = useState(false);
-  const [importError, setImportError] = useState<string | null>(null);
- 
+
   // internal saved state and dirty tracking
 
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
@@ -53,13 +48,34 @@ export default function MagicSettingsDialog({
   /*const storageKey = (uid?: string, formKey?: string) =>
     `magic_ovr:${uid || "anon"}:${formKey || "global"}`;*/
   // form-specific setting name: use parentId and formKey as requested
-  const settingName = formKey;
-  console.log("settingName:", settingName, typeof settingName);
 
-    React.useEffect(() => {
-    // try to load from server/local on mount or when userId/formKey change
+  // derive a form key from the tree (first node whose key starts with 'form')
+  const formKey = useMemo(() => {
+    const find = (nodes: TNode[]): string | null => {
+      for (const n of nodes) {
+        const k = (n.key || "").toLowerCase();
+        if (k.startsWith("form")) return n.key;
+        if (n.children?.length) {
+          const c = find(n.children);
+          if (c) return c;
+        }
+      }
+      return null;
+    };
+    return find(tree) || "global";
+  }, [tree]);
+
+  const settingName = formKey;
+  //console.log("settingName:", settingName, typeof settingName);
+
+  React.useEffect(() => {
     loadFromServer();
   }, [userId, formKey]);
+
+  React.useEffect(() => {
+    const cur = JSON.stringify(ovr);
+    setIsSaved(savedSnapshot === cur && savedSnapshot !== null);
+  }, [ovr, savedSnapshot]);
 
   const saveToServer = async () => {
     try {
@@ -75,7 +91,6 @@ export default function MagicSettingsDialog({
 
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
-      // backend PUT /user-settings/my-settings with body
       const url = `${API_BASE_URL}/user-settings/my-settings`;
       const body: any = {
         customizationConfig: { ovr },
@@ -90,8 +105,12 @@ export default function MagicSettingsDialog({
       if (!res.ok) throw new Error("Save failed");
       setSavedSnapshot(JSON.stringify(ovr));
       setIsSaved(true);
+      setSnackbarMessage("Impostazioni salvate");
+      setOpenSnackbar(true);
     } catch (e) {
       console.error("Error saving overrides to server:", e);
+      setSnackbarMessage("Errore nel salvataggio delle impostazioni");
+      setOpenSnackbar(true);
     }
   };
 
@@ -114,7 +133,6 @@ export default function MagicSettingsDialog({
       if (role == "admin") {
         const API_BASE_URL =
           process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
-        // pass settingname as query param; GET cannot have a body
         const url = `${API_BASE_URL}/user-settings/my-settings$${""}`.replace(
           "$",
           settingName ? `?settingname=${encodeURIComponent(settingName)}` : ""
@@ -123,35 +141,45 @@ export default function MagicSettingsDialog({
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
-        if (!res.ok) throw new Error("Load failed");
+        if (!res.ok) {
+          setSnackbarMessage("Errore nel caricamento delle impostazioni");
+          setOpenSnackbar(true);
+          throw new Error("Load failed");
+        }
         const data = await res.json();
         // server stores customizationConfig as a full object; we expect { ovr } inside
         const cfg = data?.customizationConfig;
         if (cfg && cfg.ovr) {
           console.log("url server admin", url);
-          console.log("fetchWithAuth", fetchWithAuth);
+          //console.log("fetchWithAuth", fetchWithAuth);
           setOvr(cfg.ovr);
           setSavedSnapshot(JSON.stringify(cfg.ovr));
           setIsSaved(true);
+          setSnackbarMessage("Impostazioni caricate dall'admin");
+          setOpenSnackbar(true);
         }
       }
 
       if (role === "agent") {
         const API_BASE_URL =
           process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
-        // pass settingname as query param; GET cannot have a body
+        // pass settingname as query param;
         const url_admin =
           `${API_BASE_URL}/user-settings/my-admin-setting$${""}`.replace(
             "$",
             settingName ? `?settingname=${encodeURIComponent(settingName)}` : ""
           );
         console.log("URL used:", url_admin);
-        const res = await fetchWithAuth(url_admin, {
+        const res_admin = await fetchWithAuth(url_admin, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
-        if (!res.ok) throw new Error("Load failed");
-        const data = await res.json();
+       if (!res_admin.ok) {
+          setSnackbarMessage("Errore nel caricamento merge delle impostazioni parte admin");
+          setOpenSnackbar(true);
+          throw new Error("Load failed");
+        }
+        const data = await res_admin.json();
         const cfg_admin = data?.customizationConfig;
 
         const url_agent =
@@ -164,7 +192,11 @@ export default function MagicSettingsDialog({
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
-        if (!res_agent.ok) throw new Error("Load failed");
+        if (!res_agent.ok) {
+          setSnackbarMessage("Errore nel caricamento merge delle impostazioni parte agent");
+          setOpenSnackbar(true);
+          throw new Error("Load failed");
+        }
         const data_agent = await res_agent.json();
         const cfg_agent = data_agent?.customizationConfig;
 
@@ -187,16 +219,12 @@ export default function MagicSettingsDialog({
           console.log("allKeys:", allKeys);
 
           allKeys.forEach((k) => {
-            console.log("Merging key:", k);
-            console.log(" adminO[k]:", adminO[k]);
-            console.log(" agentO[k]:", agentO[k]);
             // merge logic: if adminlock is set in admin, take admin fully; else agent can override
-            // if only one side has it, take that (but agent cannot enforce adminlock)
             const a = adminO[k];
             const b = agentO[k];
             if (a && b) {
               if (a.adminlock) {
-                merged_ovr[k] = { ...a }; // admin locked: take admin settings fully
+                merged_ovr[k] = { ...a }; // admin locked: imponi admin settings 
               } else {
                 const agentCopy = { ...b };
                 if (agentCopy.adminlock) agentCopy.adminlock = false; // agent cannot enforce adminlock
@@ -217,12 +245,16 @@ export default function MagicSettingsDialog({
           setOvr(merged_ovr);
           setSavedSnapshot(JSON.stringify(merged_ovr));
           setIsSaved(true);
+          setSnackbarMessage("Impostazioni caricate con merge admin/agent");
+          setOpenSnackbar(true);
           return;
         } else if (adminOverrides && !agentOverrides) {
           console.log("[MagicSettingsDialog] only admin overrides present");
           setOvr(adminOverrides);
           setSavedSnapshot(JSON.stringify(adminOverrides));
           setIsSaved(true);
+          setSnackbarMessage("Impostazioni caricate dal admin nel merge");
+          setOpenSnackbar(true);
           return;
         } else if (agentOverrides && !adminOverrides) {
           console.log("[MagicSettingsDialog] only agent overrides present");
@@ -234,12 +266,16 @@ export default function MagicSettingsDialog({
           setOvr(cleaned);
           setSavedSnapshot(JSON.stringify(cleaned));
           setIsSaved(true);
-          console.log("ovr-----------------", ovr);
+          setSnackbarMessage("Impostazioni caricate dall'agent cleaned");
+          setOpenSnackbar(true);
           return;
         } else {
           console.log(
             "[MagicSettingsDialog] no overrides found for agent/admin"
           );
+          setSnackbarMessage("Nessuna impostazione trovata per admin/agent");
+          setOpenSnackbar(true);
+          return;
         }
       }
 
@@ -257,16 +293,20 @@ export default function MagicSettingsDialog({
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
-        if (!res.ok) throw new Error("Load failed");
+        if (!res.ok) {
+          setSnackbarMessage("Errore nel caricamento delle impostazioni");
+          setOpenSnackbar(true);
+          throw new Error("Load failed");
+        }
         const data = await res.json();
-
         // server stores customizationConfig as a full object; we expect { ovr } inside
-
         const cfg = data?.customizationConfig;
         if (cfg && cfg.ovr) {
           setOvr(cfg.ovr);
           setSavedSnapshot(JSON.stringify(cfg.ovr));
           setIsSaved(true);
+          setSnackbarMessage("Impostazioni caricate dal dal admin(agent)");
+          setOpenSnackbar(true);
         }
       }
     } catch (e) {
@@ -275,13 +315,6 @@ export default function MagicSettingsDialog({
   };
 
   const resetOnServer = async () => {
-    const ok =
-      typeof window !== "undefined"
-        ? window.confirm(
-            "Resettare tutte le personalizzazioni per questo form?"
-          )
-        : true;
-    if (!ok) return;
     try {
       if (!fetchWithAuth) {
         try {
@@ -296,21 +329,32 @@ export default function MagicSettingsDialog({
 
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
-      // use query param for the optional setting name
-      const url = `${API_BASE_URL}/user-settings/my-settings$${""}`.replace(
-        "$",
-        settingName ? `?settingname=${encodeURIComponent(settingName)}` : ""
-      );
+      const url = `${API_BASE_URL}/user-settings/my-settings`;
+      const tempovr = {};
+      const body: any = {
+        customizationConfig: { tempovr },
+        settingname: settingName,
+      };
+      console.log("Saving to server URL:", tempovr, url, body);
       const res = await fetchWithAuth(url, {
-        method: "DELETE",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error("Reset failed");
+      if (!res.ok) {
+        setSnackbarMessage("Errore nel reset delle impostazioni");
+        setOpenSnackbar(true);
+        throw new Error("Save failed");
+      }
       setOvr({});
-      setSavedSnapshot(null);
-      setIsSaved(false);
+      setSavedSnapshot(JSON.stringify(ovr));
+      setIsSaved(true);
+      setSnackbarMessage("Impostazioni ressettate");
+      setOpenSnackbar(true);
     } catch (e) {
-      console.error("Error resetting overrides on server:", e);
+      console.error("Error resetting overrides to server:", e);
+      setSnackbarMessage("Errore nel reset delle impostazioni al server");
+      setOpenSnackbar(true);
     }
   };
 
@@ -332,8 +376,6 @@ export default function MagicSettingsDialog({
       });
     };
     walk(tree, 0);
-    console.log("Flat list:", out);
-    console.log("rendered:", render(tree));
     return out;
   }, [tree]);
 
@@ -343,21 +385,10 @@ export default function MagicSettingsDialog({
       [key]: { ...(p[key] ?? {}), ...patch },
     }));
   };
-  // track dirty state when overrides change
-  React.useEffect(() => {
-    const cur = JSON.stringify(ovr);
-    setIsSaved(savedSnapshot === cur && savedSnapshot !== null);
-  }, [ovr, savedSnapshot]);
-
-  // auto-load when userId or (optional) formKey change: attempt to load saved if present
-  React.useEffect(() => {
-    // try to load from server/local on mount or when userId/formKey change
-    loadFromServer();
-  }, [userId, formKey]);
 
   return (
-    <div
-      style={{ display: "flex", gap: 8, marginLeft: 8, alignItems: "center" }}
+    <Box
+      sx={{ display: "flex", gap: 0, marginLeft: 0, alignItems: "center" }}
     >
       <IconButton
         size="small"
@@ -370,14 +401,14 @@ export default function MagicSettingsDialog({
         open={open}
         onClose={() => setOpen(false)}
         fullWidth
-        maxWidth={false}
+        PaperProps={{ sx: { width: "min(640px, 92vw)", maxHeight: "90vh" } }}
         sx={{
           "& .MuiDialog-container": {
             alignItems: "center",
             justifyContent: "center",
           },
         }}
-        PaperProps={{ sx: { width: "min(640px, 92vw)", maxHeight: "90vh" } }}
+        
       >
         <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Box sx={{ flex: 1 }}>Impostazioni Magic</Box>
@@ -390,13 +421,6 @@ export default function MagicSettingsDialog({
         </DialogTitle>
         <Divider />
         <DialogContent>
-          <Stack spacing={1} sx={{ mb: 1, pt: 0 }}></Stack>
-          {importError && (
-            <Typography color="error" variant="caption">
-              {importError}
-            </Typography>
-          )}
-
           <Box sx={{ maxHeight: "50vh", overflow: "auto", mt: 1 }}>
             <List dense>
               {Array.isArray(list) &&
@@ -460,7 +484,7 @@ export default function MagicSettingsDialog({
                                     })
                                   }
                                   sx={faded}
-                                >
+                                > 
                                   {r.meta.disabled ? (
                                     <LockIcon
                                       fontSize="small"
@@ -504,8 +528,8 @@ export default function MagicSettingsDialog({
                         <Tooltip
                           title={
                             r.meta.adminlock
-                              ? "Sblocca (admin)"
-                              : "Blocca (admin)"
+                              ? "Sbloccato (admin)"
+                              : "Bloccato (admin)"
                           }
                         >
                           <AdminPanelSettingsIcon
@@ -554,7 +578,13 @@ export default function MagicSettingsDialog({
           </Button>
           <Button onClick={() => setOpen(false)}>Chiudi</Button>
         </DialogActions>
+        <Snackbar
+          open={openSnackbar}
+          autoHideDuration={2000}
+          onClose={() => setOpenSnackbar(false)}
+          message={snackbarMessage}
+        />
       </Dialog>
-    </div>
+    </Box>
   );
 }
