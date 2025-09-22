@@ -27,7 +27,6 @@ import SettingsIcon from "@mui/icons-material/Settings";
 
 import { AuthContext } from "../../components/Authcontext";
 import { TNode, Meta } from "./MagicWrapper";
-import { stringify } from "querystring";
 
 export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
   
@@ -154,7 +153,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
           throw new Error("Load failed");
         }
         const data = await res.json();
-        // server stores customizationConfig as a full object; we expect { ovr } inside
+        // server stores customizationConfig as a full object{ ovr } inside;
         const cfg = data?.customizationConfig;
         if (cfg && cfg.ovr) {
           console.log("url server admin", url);
@@ -396,10 +395,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
   }, [tree]);
 
   const update = (key: string, patch: Partial<Meta>) => {
-    setOvr((p: Record<string, Meta>) => ({
-      ...p,
-      [key]: { ...(p[key] ?? {}), ...patch },
-    }));
+    setOvr((p: Record<string, Meta>) => ({ ...p, [key]: { ...(p[key] ?? {}), ...patch } }));
   };
 
   return (

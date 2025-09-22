@@ -2,11 +2,8 @@
 import React, {
   ReactElement,
   ReactNode,
-  useEffect,
   useMemo,
   useState,
-  useContext,
-  use,
 } from "react";
 import Box from "@mui/material/Box";
 import MagicSettingsDialog from "./MagicSettingsDialog";
@@ -62,7 +59,7 @@ export default function MagicWrapper({
   }, [children, ovr]);
 
   // Log minimal structure
-  
+  /*
   useEffect(() => {
     const slim = (nodes: any[]): any[] =>
       nodes.map((n) => ({ key: n.key, ...n.meta, children: slim(n.children) }));
@@ -73,7 +70,7 @@ export default function MagicWrapper({
     console.log("ovr_json:", JSON.stringify(ovr));
     console.log("children:", children);
   }, [tree, ovr]);
-  
+  */
 
   const render = (nodes: TNode[]): ReactNode => {
     const vis = nodes.filter((n) => n.meta.visible !== false);
