@@ -6,8 +6,6 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  Typography,
-  Stack,
   Box,
   Chip,
   List,
@@ -29,8 +27,10 @@ import SettingsIcon from "@mui/icons-material/Settings";
 
 import { AuthContext } from "../../components/Authcontext";
 import { TNode, Meta } from "./MagicWrapper";
+import { stringify } from "querystring";
 
 export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
+  
   const authContext = useContext(AuthContext);
   const fetchWithAuth = authContext?.fetchWithAuth;
   const userId = authContext?.user?.id;
@@ -70,6 +70,12 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
 
   React.useEffect(() => {
     loadFromServer();
+    console.log(
+      "use effect_____________Loading overrides for user",
+      userId,
+      "formKey",
+      formKey
+    );
   }, [userId, formKey]);
 
   React.useEffect(() => {
@@ -126,7 +132,8 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
           setOvr(data.ovr);
           setSavedSnapshot(JSON.stringify(data.ovr));
           setIsSaved(true);
-        }*/
+        }
+        */
         console.error("No fetchWithAuth available");
         return;
       }
@@ -151,7 +158,6 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
         const cfg = data?.customizationConfig;
         if (cfg && cfg.ovr) {
           console.log("url server admin", url);
-          //console.log("fetchWithAuth", fetchWithAuth);
           setOvr(cfg.ovr);
           setSavedSnapshot(JSON.stringify(cfg.ovr));
           setIsSaved(true);
@@ -174,8 +180,10 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
-       if (!res_admin.ok) {
-          setSnackbarMessage("Errore nel caricamento merge delle impostazioni parte admin");
+        if (!res_admin.ok) {
+          setSnackbarMessage(
+            "Errore nel caricamento merge delle impostazioni parte admin"
+          );
           setOpenSnackbar(true);
           throw new Error("Load failed");
         }
@@ -193,7 +201,9 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
           headers: { "Content-Type": "application/json" },
         });
         if (!res_agent.ok) {
-          setSnackbarMessage("Errore nel caricamento merge delle impostazioni parte agent");
+          setSnackbarMessage(
+            "Errore nel caricamento merge delle impostazioni parte agent"
+          );
           setOpenSnackbar(true);
           throw new Error("Load failed");
         }
@@ -219,17 +229,22 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
           console.log("allKeys:", allKeys);
 
           allKeys.forEach((k) => {
-            // merge logic: if adminlock is set in admin, take admin fully; else agent can override
+            // merge logic:
             const a = adminO[k];
             const b = agentO[k];
             if (a && b) {
+              //alternativa senza adminlock
+              //merged_ovr[k] = { ...b, ...a };
+              /*
+              */
               if (a.adminlock) {
                 merged_ovr[k] = { ...a }; // admin locked: imponi admin settings 
               } else {
                 const agentCopy = { ...b };
-                if (agentCopy.adminlock) agentCopy.adminlock = false; // agent cannot enforce adminlock
-                merged_ovr[k] = { ...a, ...agentCopy }; // agent overrides admin where present
-              }
+              if (agentCopy.adminlock) agentCopy.adminlock = false; // agent cannot enforce adminlock
+              merged_ovr[k] = { ...a, ...agentCopy }; // agent overrides admin where present
+            }
+            
             } else if (a) {
               merged_ovr[k] = { ...a };
             } else if (b) {
@@ -237,6 +252,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
               if (agentCopy.adminlock) agentCopy.adminlock = false;
               merged_ovr[k] = agentCopy;
             }
+
           });
           console.log(
             "[MagicSettingsDialog] merged admin+agent overrides",
@@ -387,9 +403,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
   };
 
   return (
-    <Box
-      sx={{ display: "flex", gap: 0, marginLeft: 0, alignItems: "center" }}
-    >
+    <Box sx={{ display: "flex", gap: 0, marginLeft: 0, alignItems: "center" }}>
       <IconButton
         size="small"
         onClick={() => setOpen(true)}
@@ -408,7 +422,6 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
             justifyContent: "center",
           },
         }}
-        
       >
         <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Box sx={{ flex: 1 }}>Impostazioni Magic</Box>
@@ -435,9 +448,10 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                     }}
                   >
                     <ListItemText
-                      primary={r.key}
+                      primary={String(r.key).replace(/[-_]/g, " ")}
                       sx={{ mr: 2, wordBreak: "break-all" }}
                     />
+
                     <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                       {(() => {
                         const locked = !!r.meta.adminlock && role !== "admin";
@@ -484,7 +498,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                                     })
                                   }
                                   sx={faded}
-                                > 
+                                >
                                   {r.meta.disabled ? (
                                     <LockIcon
                                       fontSize="small"
@@ -499,6 +513,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                           </>
                         );
                       })()}
+
                       {role === "admin" && (
                         <Tooltip
                           title={
@@ -524,6 +539,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                           </IconButton>
                         </Tooltip>
                       )}
+
                       {role === "agent" && r.meta.adminlock && (
                         <Tooltip
                           title={
@@ -538,6 +554,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                           />
                         </Tooltip>
                       )}
+
                       {(() => {
                         const locked = !!r.meta.adminlock && role !== "admin";
                         return (
@@ -557,6 +574,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                           />
                         );
                       })()}
+
                     </Box>
                   </ListItem>
                 ))}

@@ -29,15 +29,12 @@ export type TNode = {
 export default function MagicWrapper({
   children,
   sx = {},
-  ...rest
 }: {
   children: ReactNode;
   sx?: any;
-  [k: string]: any;
 }) {
   const [ovr, setOvr] = useState<Record<string, Meta>>({});
-
-  // Build a simple tree from children, mixing defaults (props) with overrides
+  // call ricorsiva che traversa l'albero dei nodi React;
   const tree = useMemo((): TNode[] => {
     const walk = (nodes: ReactNode, parentKey = "root"): TNode[] => {
       const arr = React.Children.toArray(nodes);
@@ -65,7 +62,7 @@ export default function MagicWrapper({
   }, [children, ovr]);
 
   // Log minimal structure
-  /*
+  
   useEffect(() => {
     const slim = (nodes: any[]): any[] =>
       nodes.map((n) => ({ key: n.key, ...n.meta, children: slim(n.children) }));
@@ -76,9 +73,8 @@ export default function MagicWrapper({
     console.log("ovr_json:", JSON.stringify(ovr));
     console.log("children:", children);
   }, [tree, ovr]);
-  */
+  
 
-  // Render applying visibility + order; keep elements unchanged otherwise
   const render = (nodes: TNode[]): ReactNode => {
     const vis = nodes.filter((n) => n.meta.visible !== false);
     vis.sort((a, b) => (a.meta.order ?? 0) - (b.meta.order ?? 0));
@@ -94,13 +90,13 @@ export default function MagicWrapper({
 
       if (n.meta.disabled) {
         const el = n.node as ReactElement;
-        const type = el?.type;
-        //const isIntrinsic = typeof type === "string";
-
+        
         const existingStyle = (el.props as any)?.style || {};
         extra.style = { ...existingStyle, opacity: 0.6 };
         extra.style.pointerEvents = "none";
-
+        
+        //const type = el?.type;
+        //const isIntrinsic = typeof type === "string";
         /* if (!isIntrinsic) {
           extra.style.pointerEvents = "none";
         } else {
@@ -128,11 +124,10 @@ export default function MagicWrapper({
       sx={{
         display: "flex",
         flexDirection: "column",
-        flex: "1 1 auto", 
+        flex: "1 1 auto",
         minHeight: 0,
         ...sx,
       }}
-      {...rest}
     >
       <Box
         style={{

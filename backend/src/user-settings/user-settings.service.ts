@@ -17,14 +17,11 @@ export class UserSettingsService {
   }
 
   async findByUserId(userId: number, settingname?: string): Promise<UserSettings | null> {
-    const where: any = {};
-    where.userId = userId;
-    where.settingname = settingname;
     if (!settingname) {
-      console.log(`Finding settings with criteria: ${JSON.stringify(where)}`);
+      console.log(`Finding settings with criteria: ${JSON.stringify({ userId, settingname })}`);
     }
     return await this.userSettingsRepository.findOne({
-      where
+      where: { userId, settingname }
     });
   }
 
@@ -36,7 +33,7 @@ export class UserSettingsService {
       userSettings = await this.create({
         userId,
         settingname: settingname || updateUserSettingsDto?.settingname || 'default',
-        ...updateUserSettingsDto
+        customizationConfig: updateUserSettingsDto?.customizationConfig || {},
       });
     } else {
       // Aggiorna quelle esistenti

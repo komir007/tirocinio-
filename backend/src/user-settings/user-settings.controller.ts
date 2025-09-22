@@ -1,25 +1,18 @@
 import {
   Controller,
   Get,
-  Post,
   Put,
   Delete,
   Body,
-  Param,
   Query,
   UseGuards,
   Request,
-  ForbiddenException,
   BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { UserSettingsService } from './user-settings.service';
-import {
-  CreateUserSettingsDto,
-  UpdateUserSettingsDto,
-} from './dto/user-settings.dto';
 import { JwtGuard } from '../auth/jwt.guard';
-import { UserRole } from '../user/user.entity';
+
 
 @Controller('user-settings')
 @UseGuards(JwtGuard)
@@ -36,7 +29,7 @@ export class UserSettingsController {
   @Get('my-settings')
   async getMySettings(@Request() req, @Query('settingname') settingname?: string) {
     try {
-      const userId = req.user.userId; // CORRETTO: usa userId invece di sub
+      const userId = req.user.userId; 
       this.logger.log(
         `Getting settings for userId: ${userId}`,
       );
@@ -48,7 +41,6 @@ export class UserSettingsController {
         throw new BadRequestException('Invalid user ID');
       }
 
-      this.logger.log(`Using parsed userId: ${userId}`);
       const settings = await this.userSettingsService.findByUserId(
         userId,
         settingname,
@@ -130,7 +122,7 @@ export class UserSettingsController {
   @Delete('my-settings')
   async deleteMySettings(@Request() req, @Query('settingname') settingname?: string) {
     try {
-      const userId = req.user.userId; // CORRETTO: usa userId invece di sub
+      const userId = req.user.userId; 
       this.logger.log(
         `Deleting settings for userId: ${userId}, settingsname: ${settingname})`,
       );
