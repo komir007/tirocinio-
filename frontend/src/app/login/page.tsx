@@ -117,7 +117,7 @@ export default function Loginpage() {
         <Paper
           elevation={0}
           sx={{
-            bgcolor: "grey.100",
+            //bgcolor: "grey.100",
             p: 4,
             borderRadius: 4,
             minWidth: 320,

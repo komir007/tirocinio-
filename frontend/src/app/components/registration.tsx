@@ -167,6 +167,22 @@ export default function Registration() {
                     backgroundColor: "white",
                   }}
                 />
+
+                 <TextField
+                  id="f-indirizzo"
+                  key="field-indirizzo"
+                  name="indirizzo"
+                  label="Indirizzo"
+                  //value={}
+                  //onChange={handleChange}
+                  required
+                  fullWidth
+                  sx={{
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                    backgroundColor: "white",
+                  }}
+                />
               </Box>
             </Box>
 

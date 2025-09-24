@@ -1,10 +1,5 @@
 "use client";
-import React, {
-  ReactElement,
-  ReactNode,
-  useMemo,
-  useState,
-} from "react";
+import React, { ReactElement, ReactNode, useMemo, useState } from "react";
 import Box from "@mui/material/Box";
 import MagicSettingsDialog from "./MagicSettingsDialog";
 
@@ -38,9 +33,7 @@ export default function MagicWrapper({
       return arr.map<TNode>((node, idx) => {
         const isEl = React.isValidElement(node);
         const el = isEl ? node : null;
-        const rawKey = isEl
-          ? el!.key ?? `${parentKey}-${idx}`
-          : `${parentKey}-${idx}`;
+        const rawKey = isEl ? el!.key ?? `${parentKey}-${idx}` : `${parentKey}-${idx}`;
         const key = String(rawKey).replace(/^\.\$?/, "");
         const props: any = isEl ? el!.props ?? {} : {};
         const def: Meta = {
@@ -58,20 +51,6 @@ export default function MagicWrapper({
     return walk(children);
   }, [children, ovr]);
 
-  // Log minimal structure
-  /*
-  useEffect(() => {
-    const slim = (nodes: any[]): any[] =>
-      nodes.map((n) => ({ key: n.key, ...n.meta, children: slim(n.children) }));
-    // eslint-disable-next-line no-console
-    console.log("Full tree:", tree);
-    console.log("MagicWrapper slim tree:", slim(tree));
-    console.log("Overrides:", ovr);
-    console.log("ovr_json:", JSON.stringify(ovr));
-    console.log("children:", children);
-  }, [tree, ovr]);
-  */
-
   const render = (nodes: TNode[]): ReactNode => {
     const vis = nodes.filter((n) => n.meta.visible !== false);
     vis.sort((a, b) => (a.meta.order ?? 0) - (b.meta.order ?? 0));
@@ -79,7 +58,6 @@ export default function MagicWrapper({
       if (!n.isEl) return n.node;
       const childOut = render(n.children);
 
-      // Simple disabled handling
       const extra: any = {
         "data-disabled": n.meta.disabled ? "true" : "false",
         "aria-disabled": n.meta.disabled || undefined,
@@ -87,27 +65,9 @@ export default function MagicWrapper({
 
       if (n.meta.disabled) {
         const el = n.node as ReactElement;
-        
         const existingStyle = (el.props as any)?.style || {};
         extra.style = { ...existingStyle, opacity: 0.6 };
         extra.style.pointerEvents = "none";
-        
-        //const type = el?.type;
-        //const isIntrinsic = typeof type === "string";
-        /* if (!isIntrinsic) {
-          extra.style.pointerEvents = "none";
-        } else {
-          const nativeControls = [
-            "input",
-            "select",
-            "textarea",
-            "button",
-            "fieldset",
-            "option",
-            "optgroup",
-          ];
-          if (nativeControls.includes(type as string)) extra.disabled = true;
-        }*/
       }
       return React.cloneElement(n.node as ReactElement, {
         ...extra,
@@ -146,3 +106,35 @@ export default function MagicWrapper({
     </Box>
   );
 }
+
+// Log minimal structure
+/*
+  useEffect(() => {
+    const slim = (nodes: any[]): any[] =>
+      nodes.map((n) => ({ key: n.key, ...n.meta, children: slim(n.children) }));
+    // eslint-disable-next-line no-console
+    console.log("Full tree:", tree);
+    console.log("MagicWrapper slim tree:", slim(tree));
+    console.log("Overrides:", ovr);
+    console.log("ovr_json:", JSON.stringify(ovr));
+    console.log("children:", children);
+  }, [tree, ovr]);
+  */
+
+//const type = el?.type;
+//const isIntrinsic = typeof type === "string";
+/*
+if (!isIntrinsic) {
+        extra.style.pointerEvents = "none";
+      } else {
+        const nativeControls = [
+          "input",
+          "select",
+          "textarea",
+          "button",
+          "fieldset",
+          "option",
+          "optgroup",
+        ];
+        if (nativeControls.includes(type as string)) extra.disabled = true;
+        }*/

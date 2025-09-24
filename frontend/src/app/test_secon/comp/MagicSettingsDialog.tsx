@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useContext, useMemo } from "react";
+import React, { useState, useContext, useMemo } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -48,7 +48,6 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
     `magic_ovr:${uid || "anon"}:${formKey || "global"}`;*/
   // form-specific setting name: use parentId and formKey as requested
 
-  // derive a form key from the tree (first node whose key starts with 'form')
   const formKey = useMemo(() => {
     const find = (nodes: TNode[]): string | null => {
       for (const n of nodes) {
@@ -69,19 +68,13 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
 
   React.useEffect(() => {
     loadFromServer();
-    console.log(
-      "use effect_____________Loading overrides for user",
-      userId,
-      "formKey",
-      formKey
-    );
   }, [userId, formKey]);
 
   React.useEffect(() => {
     const cur = JSON.stringify(ovr);
     setIsSaved(savedSnapshot === cur && savedSnapshot !== null);
   }, [ovr, savedSnapshot]);
-
+  
   const saveToServer = async () => {
     try {
       if (!fetchWithAuth) {
@@ -153,7 +146,6 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
           throw new Error("Load failed");
         }
         const data = await res.json();
-        // server stores customizationConfig as a full object{ ovr } inside;
         const cfg = data?.customizationConfig;
         if (cfg && cfg.ovr) {
           console.log("url server admin", url);
@@ -240,8 +232,8 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                 merged_ovr[k] = { ...a }; // admin locked: imponi admin settings 
               } else {
                 const agentCopy = { ...b };
-              if (agentCopy.adminlock) agentCopy.adminlock = false; // agent cannot enforce adminlock
-              merged_ovr[k] = { ...a, ...agentCopy }; // agent overrides admin where present
+              if (agentCopy.adminlock) agentCopy.adminlock = false; // agent reset adminlock
+              merged_ovr[k] = { ...a, ...agentCopy }; // agent overrides admin settings
             }
             
             } else if (a) {
@@ -297,7 +289,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
       if (role === "client") {
         const API_BASE_URL =
           process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
-        // pass settingname as query param; GET cannot have a body
+        // pass settingname as query param;
         const url =
           `${API_BASE_URL}/user-settings/my-admin-setting$${""}`.replace(
             "$",
@@ -314,7 +306,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
           throw new Error("Load failed");
         }
         const data = await res.json();
-        // server stores customizationConfig as a full object; we expect { ovr } inside
+        // server stores customizationConfig as a full object;
         const cfg = data?.customizationConfig;
         if (cfg && cfg.ovr) {
           setOvr(cfg.ovr);
@@ -345,24 +337,24 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
       const url = `${API_BASE_URL}/user-settings/my-settings`;
-      const tempovr = {};
+      const newOvr: Record<string, Meta> = {};
       const body: any = {
-        customizationConfig: { tempovr },
+        customizationConfig: { ovr: newOvr },
         settingname: settingName,
       };
-      console.log("Saving to server URL:", tempovr, url, body);
+      console.log("Saving to server URL:", newOvr, url, body);
       const res = await fetchWithAuth(url, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        setSnackbarMessage("Errore nel reset delle impostazioni");
+        setSnackbarMessage("Errore nel reset delle impostazioni res");
         setOpenSnackbar(true);
         throw new Error("Save failed");
       }
       setOvr({});
-      setSavedSnapshot(JSON.stringify(ovr));
+      setSavedSnapshot(JSON.stringify(newOvr));
       setIsSaved(true);
       setSnackbarMessage("Impostazioni ressettate");
       setOpenSnackbar(true);
@@ -395,7 +387,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
   }, [tree]);
 
   const update = (key: string, patch: Partial<Meta>) => {
-    setOvr((p: Record<string, Meta>) => ({ ...p, [key]: { ...(p[key] ?? {}), ...patch } }));
+    setOvr((prevOvr: Record<string, Meta>) => ({ ...prevOvr, [key]: { ...(prevOvr[key] ?? {}), ...patch } }));
   };
 
   return (
@@ -411,7 +403,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
         open={open}
         onClose={() => setOpen(false)}
         fullWidth
-        PaperProps={{ sx: { width: "min(640px, 92vw)", maxHeight: "90vh" } }}
+        slotProps={{ paper: { sx: { width: "min(640px, 92vw)", maxHeight: "90vh" } } }}
         sx={{
           "& .MuiDialog-container": {
             alignItems: "center",
@@ -451,9 +443,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                     <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                       {(() => {
                         const locked = !!r.meta.adminlock && role !== "admin";
-                        const faded = locked
-                          ? { opacity: 0.4, pointerEvents: "none" }
-                          : {};
+                        const faded = locked ? { opacity: 0.4, pointerEvents: "none" } : {};
                         return (
                           <>
                             <Tooltip
@@ -550,7 +540,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                           />
                         </Tooltip>
                       )}
-
+  
                       {(() => {
                         const locked = !!r.meta.adminlock && role !== "admin";
                         return (
