@@ -4,9 +4,6 @@ import { Box, Button, Chip, TextField } from '@mui/material';
 
 import MagicWrapper from '@/app/test_secon/comp/MagicWrapper';
 
-
-
-
 export default function Demo() {
   return (
     <MagicWrapper>

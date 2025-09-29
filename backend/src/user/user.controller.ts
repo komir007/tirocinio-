@@ -36,16 +36,21 @@ export class UsersController {
   // Creare un nuovo utente 
   @UseGuards(JwtGuard) 
   @Post()
-  async create(@Body() createUserDto: CreateUserDto): Promise<User> {
-    // La password verrà hashata nel servizio di autenticazione o qui prima di salvare
-    return this.usersService.create(createUserDto); // o req.user.id per chi ha creato l'utente
+  async create(@NestRequest() req: Request, @Body() createUserDto: CreateUserDto): Promise<User> {
+    const creatorEmail = (req.user as any)?.email;
+    // Impostiamo createdBy se non presente
+    if (creatorEmail && !createUserDto.createdBy) {
+      (createUserDto as any).createdBy = creatorEmail;
+    }
+    return this.usersService.create(createUserDto); 
   }
 
   // Aggiornare un utente 
   @UseGuards(JwtGuard)
   @Put(':id')
-  async update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto): Promise<User | null> {
-    return this.usersService.update(id, updateUserDto);
+  async update(@NestRequest() req: Request, @Param('id') id: number, @Body() updateUserDto: UpdateUserDto): Promise<User | null> {
+    const modifierEmail = (req.user as any)?.email;
+    return this.usersService.update(id, updateUserDto, modifierEmail);
   }
 
   // Eliminare un utente (solo per admin)

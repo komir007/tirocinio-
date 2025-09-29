@@ -160,12 +160,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const token = localStorage.getItem("accessToken");
     const headers = new Headers(init.headers || {});
     if (token) headers.set("Authorization", `Bearer ${token}`);
-    // preserve content-type if already set
     const res = await fetch(input, { ...init, headers });
     if (res.status === 401 || res.status === 403) {
-      // token non valido / scaduto lato server: puliamo stato e notifichiamo chiamante
       handleLogoutClean();
-      // opzionale: force redirect a /login -> lasciamo ai consumer la decisione
       throw new Error("Unauthorized");
     }
     return res;

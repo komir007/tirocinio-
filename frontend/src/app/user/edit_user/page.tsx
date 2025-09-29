@@ -46,7 +46,7 @@ export default function EditUserPage() {
         <Box sx={{ marginTop: 4, marginBottom: 1, marginX: 3 }}>
           <BasicBreadcrumbs />
           <Typography variant="h5" sx={{ marginTop: 1 }}>
-            Gestione Utenti
+            Modifica Utenti
           </Typography>
           <Typography variant="body2" sx={{ marginTop: 1 }}>
             Qui puoi modificare l'utente

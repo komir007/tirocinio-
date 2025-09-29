@@ -6,13 +6,12 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import { AuthContext } from "./Authcontext";
 import { useContext } from "react";
-
-import { useSearchParams } from "next/navigation";
+import { Divider } from "@mui/material";
 import MagicWrapper from "../test_secon/comp/MagicWrapper";
 
 export default function Edit_user() {
@@ -28,6 +27,7 @@ export default function Edit_user() {
     password: "",
     role: isAgent ? "client" : (searchParams.get("role") || "client"),
   });
+
   const router = useRouter();
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 
@@ -36,7 +36,7 @@ export default function Edit_user() {
     if (isAgent) {
       setForm((prev) => ({ ...prev, role: "client" }));
     }
-    // eslint-disable-next-line
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAgent]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,7 +69,7 @@ export default function Edit_user() {
             name: form.name,
             email: form.email,
             password: form.password,
-            role: isAgent ? "client" : form.role, // forza client se agent
+            role: isAgent ? "client" : form.role,
           }),
         }
       );
@@ -91,90 +91,232 @@ export default function Edit_user() {
       justifyContent="space-between"
       alignItems="flex-start"
       height="100%"
-      minHeight="60vh"
+      minHeight="70vh"
     >
       <Paper
         elevation={2}
         sx={{
           width: "100%",
           maxWidth: "100vw",
-          height: "100%",
-          maxHeight: "100vh",
+          height: "auto",
+          maxHeight: "auto",
           borderRadius: 3,
-          p: 4,
           bgcolor: "#fff",
           display: "flex",
           flexDirection: "column",
+          overflow: "hidden", // scroll solo dentro il form
         }}
       >
         <MagicWrapper>
-        <Box
-          component="form"
-          aria-label="form_Edit_user"
-          key="form_Edit_user"
-          onSubmit={handleSubmit}
-          display="flex"
-          flexDirection={{ xs: "column", sm: "row" }}
-          gap={2}
-          mb={4}
-          flexGrow={1}
-        >
-          <TextField
-            name="name"
-            label="Nome"
-            key="form_name"
-            value={form.name}
-            onChange={handleChange}
-            required
-            fullWidth
-            sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-          />
-          <TextField
-            name="email"
-            label="Email"
-            key="form_email"
-            type="email"
-            value={form.email}
-            onChange={handleChange}
-            required
-            fullWidth
-            sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-          />
-          <TextField
-            key="form_password"  
-            name="password"
-            label="Password"
-            type="password"
-            value={form.password}
-            onChange={handleChange}
-            required
-            fullWidth
-            sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-          />
-          {!isAgent && (
-            <TextField
-              name="role"
-              key="form_role"
-              label="Ruolo"
-              select
-              value={form.role}
-              onChange={handleChange}
-              required
-              fullWidth
-              sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+          <Box
+            aria-label="form_Edit_User"
+            key="form_Edit_User"
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              flex: "1 1 auto",
+              minHeight: 0,
+              overflowY: "auto",
+            }}
+          >
+            <Box
+              id="sezione_anagrafica"
+              key="sezione_anagrafica"
+              display="flex"
+              flexDirection="column"
+              gap={2}
+              m={2}
+              border={1}
+              borderColor="grey.300"
+              borderRadius={2}
+              p={2}
+              bgcolor="grey.50"
             >
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="agent">Agent</MenuItem>
-              <MenuItem value="client">Client</MenuItem>
-            </TextField>
-          )}
-        </Box>
+              <Typography variant="subtitle1">
+                Informazioni anagrafiche
+              </Typography>
+              <Box
+                key="1"
+                gap={2}
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" },
+                }}
+              >
+                <TextField
+                  id="f-name"
+                  key="field-name"
+                  name="name"
+                  label="Nome"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                  fullWidth
+                  sx={{
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                    backgroundColor: "white",
+                  }}
+                />
+
+                <TextField
+                  id="f-cognome"
+                  key="field-cognome"
+                  name="cognome"
+                  label="Cognome"
+                  fullWidth
+                  sx={{
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                    backgroundColor: "white",
+                  }}
+                />
+
+                <TextField
+                  id="f-indirizzo"
+                  key="field-indirizzo"
+                  name="indirizzo"
+                  label="Indirizzo"
+                  fullWidth
+                  sx={{
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                    backgroundColor: "white",
+                  }}
+                />
+              </Box>
+            </Box>
+
+            <Box
+              id="sezione_accesso"
+              key="sezione_accesso"
+              display="flex"
+              flexDirection="column"
+              gap={2}
+              m={2}
+              border={1}
+              borderColor="grey.300"
+              borderRadius={2}
+              p={2}
+              bgcolor="grey.50"
+            >
+              <Typography variant="subtitle1">Accesso</Typography>
+              <Box
+                key="2"
+                display="flex"
+                gap={2}
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" },
+                }}
+              >
+                <TextField
+                  id="f-email"
+                  key="field-email"
+                  name="email"
+                  label="Email"
+                  type="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                  fullWidth
+                  sx={{
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                    backgroundColor: "white",
+                  }}
+                />
+
+                <TextField
+                  id="f-password"
+                  key="field-password"
+                  name="password"
+                  label="Nuova password"
+                  type="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                  fullWidth
+                  sx={{
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                    backgroundColor: "white",
+                  }}
+                />
+              </Box>
+            </Box>
+
+            <Box
+              m={2}
+              id="sezione_ruolo"
+              key="sezione_ruolo"
+              display="flex"
+              flexDirection="column"
+              gap={2}
+              border={1}
+              borderColor="grey.300"
+              borderRadius={2}
+              p={2}
+              bgcolor="grey.50"
+            >
+              <Typography variant="subtitle1">Ruolo</Typography>
+              <Box
+                display="flex"
+                flexDirection={{ xs: "column", sm: "row" }}
+                width={{ xs: "100%", sm: "50%" }}
+                gap={2}
+              >
+                {!isAgent && (
+                  <TextField
+                    id="f-role"
+                    key="field-role"
+                    name="role"
+                    label="Ruolo"
+                    select
+                    value={form.role}
+                    onChange={handleChange}
+                    required
+                    fullWidth
+                    sx={{
+                      flex: 1,
+                      "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                      backgroundColor: "white",
+                    }}
+                  >
+                    <MenuItem value="admin">Admin</MenuItem>
+                    <MenuItem value="agent">Agent</MenuItem>
+                    <MenuItem value="client">Client</MenuItem>
+                  </TextField>
+                )}
+                {isAgent && (
+                  <TextField
+                    disabled
+                    value="client"
+                    label="Ruolo"
+                    helperText="Gli agent possono assegnare solo client"
+                    fullWidth
+                    sx={{
+                      flex: 1,
+                      "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                      backgroundColor: "white",
+                    }}
+                  />
+                )}
+              </Box>
+            </Box>
+          </Box>
         </MagicWrapper>
-        <Box display="flex" justifyContent="flex-end" gap={2}>
+
+        <Box sx={{ maxHeight: "100%" }} />
+        <Divider />
+        <Box display="flex" p={2} justifyContent="flex-end" gap={2}>
           <Button variant="outlined" color="primary" onClick={handleCancel}>
             Annulla
           </Button>
           <Button
+            form="form_EditUser"
             type="submit"
             variant="contained"
             color="primary"
@@ -184,6 +326,7 @@ export default function Edit_user() {
           </Button>
         </Box>
       </Paper>
+
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={1000}

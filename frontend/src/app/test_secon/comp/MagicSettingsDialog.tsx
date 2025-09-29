@@ -225,9 +225,8 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
             const b = agentO[k];
             if (a && b) {
               //alternativa senza adminlock
-              //merged_ovr[k] = { ...b, ...a };
+              merged_ovr[k] = { ...b, ...a };
               /*
-              */
               if (a.adminlock) {
                 merged_ovr[k] = { ...a }; // admin locked: imponi admin settings 
               } else {
@@ -235,6 +234,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
               if (agentCopy.adminlock) agentCopy.adminlock = false; // agent reset adminlock
               merged_ovr[k] = { ...a, ...agentCopy }; // agent overrides admin settings
             }
+            */
             
             } else if (a) {
               merged_ovr[k] = { ...a };

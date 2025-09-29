@@ -236,7 +236,7 @@ export default function ResponsiveDrawer(props: Props) {
         {menuItems.map((item) => (
           <ListItem key={item.label} disablePadding sx={{ display: "block" }}>
             <ListItemButton
-              onClick={() => router.push(item.path)}
+              onClick={() => router.push(item.paths[0])}
               sx={{
                 margin: 1,
                 minHeight: 48,
