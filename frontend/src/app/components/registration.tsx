@@ -23,7 +23,7 @@ export default function Registration() {
   const isAgent = authContext?.user?.role?.toLowerCase() === "agent";
 
   const [form, setForm] = React.useState({
-    name: "",
+    name: "demo",
     email: "",
     password: "",
     role: isAgent ? "client" : "",
@@ -101,6 +101,7 @@ export default function Registration() {
           <Box
             aria-label="form_Registration"
             key="form_Registration"
+            id ="form"
             component="form"
             onSubmit={handleSubmit}
             /* layout e scroll qui */

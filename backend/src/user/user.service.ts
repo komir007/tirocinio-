@@ -1,6 +1,6 @@
 
 // src/users/users.service.ts
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Req } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
@@ -22,12 +22,9 @@ export class UsersService {
    * Assunzione: esiste un record in user_settings con settingname='user_form' (o default) che contiene
    * customizationConfig = { fields: { name: { visible: true }, surname: { visible: false }, ... } }
    */
-  private async getFieldVisibilityConfig(createdByEmail?: string, nameSettings?: string): Promise<Record<string, any>> {
-    if (!createdByEmail) return {};
-    // Trova l'utente creatore per email per ottenere il suo id, poi le sue impostazioni.
-    const creator = await this.findOneByEmail(createdByEmail);
-    if (!creator) return {};
-    const settings = await this.userSettingsRepository.findOne({ where: { userId: creator.id, settingname: nameSettings || 'form_Registration' } });
+  private async getFieldVisibilityConfig(userid?: number, nameSettings?: string): Promise<Record<string, any>> {
+    if (!userid) return {};
+    const settings = await this.userSettingsRepository.findOne({ where: { userId: userid, settingname: nameSettings || 'form_Registration' } });
     if (!settings || !settings.customizationConfig) return {};
     // Estrarre struttura attesa
     const fieldsCfg = settings.customizationConfig.fields || {};
@@ -39,13 +36,16 @@ export class UsersService {
    * Se un campo è marcato come non visibile (visible === false) e viene passato un valore, lancia eccezione.
    * In alternativa si potrebbe scegliere di rimuovere il campo invece di lanciare errore: qui lanciamo errore per sicurezza.
    */
-  private async enforceHiddenFieldsPolicy(input: Partial<User>, createdByEmail?: string, nameSettings?: string): Promise<void> {
-    const visibility = await this.getFieldVisibilityConfig(createdByEmail, nameSettings);
+  private async enforceHiddenFieldsPolicy(input: Partial<User>, userid?: number, nameSettings?: string): Promise<void> {
+    const visibility = await this.getFieldVisibilityConfig(userid, nameSettings);
+    console.log('Campo visibilità per userId', userid, ':', visibility);
     if (!visibility || Object.keys(visibility).length === 0) return; // nessuna policy
 
     for (const [fieldName, meta] of Object.entries(visibility)) {
       const visibleFlag = (meta as any)?.visible;
-      if (visibleFlag === false && input[fieldName as keyof User] !== undefined) {
+      const value = input[fieldName as keyof User];
+      const hasValue = Object.prototype.hasOwnProperty.call(input, fieldName) && value !== undefined && value !== null && value !== '';
+      if (visibleFlag === false && hasValue) {
         throw new BadRequestException(`Il campo '${fieldName}' non è attualmente visibile e non può essere impostato.`);
       }
     }
@@ -65,10 +65,10 @@ export class UsersService {
 
   // Crea un nuovo utente
   // userData ora può includere name, surname, email, password, role
-  async create(userData: Partial<User>): Promise<User> {
+  async create(@Req() req, userData: Partial<User>): Promise<User> {
     // Enforce hidden field policy (usa createdBy per recuperare configurazione del creatore)
     const nameSettings = "form_Registration";
-    await this.enforceHiddenFieldsPolicy(userData, userData.createdBy, nameSettings);
+    await this.enforceHiddenFieldsPolicy(userData, req.user.id, nameSettings);
     if (userData.password) {
       userData.password = await bcrypt.hash(userData.password, 10);
     }
@@ -78,10 +78,10 @@ export class UsersService {
 
   // Aggiorna un utente
   // userData ora può includere name, surname, email, password, role
-  async update(id: number, updateUserDto: UpdateUserDto, modifierEmail?: string): Promise<User | null> {
+  async update(@Req() req, id: number, updateUserDto: UpdateUserDto, modifierEmail?: string): Promise<User | null> {
     // Enforce hidden field policy rispetto alla configurazione del modificatore (chi effettua la richiesta)
     const nameSettings = "form_Edit_User";
-    await this.enforceHiddenFieldsPolicy(updateUserDto, modifierEmail, nameSettings);
+    await this.enforceHiddenFieldsPolicy(updateUserDto, req.user.id, nameSettings);
     if (updateUserDto.password) {
         updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
     }
