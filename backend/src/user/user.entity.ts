@@ -7,6 +7,13 @@ export enum UserRole {
   CLIENT = 'client',
 }
 
+export interface Meta {
+  visible : boolean;
+  editable : boolean;
+  order : number;
+  adminlocked : boolean;
+}
+
 @Entity('user') // Specifica il nome della tabella nel database
 export class User {
   @PrimaryGeneratedColumn() // Colonna chiave primaria auto-incrementante

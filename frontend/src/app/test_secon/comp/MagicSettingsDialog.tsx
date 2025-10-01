@@ -26,7 +26,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import SettingsIcon from "@mui/icons-material/Settings";
 
 import { AuthContext } from "../../components/Authcontext";
-import { TNode, Meta } from "./MagicWrapper";
+import { TNode, Meta, Metaex } from "./MagicWrapper";
 
 export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
   
@@ -220,30 +220,39 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
           console.log("allKeys:", allKeys);
 
           allKeys.forEach((k) => {
-            // merge logic:
             const a = adminO[k];
             const b = agentO[k];
             if (a && b) {
-              //alternativa senza adminlock
-              merged_ovr[k] = { ...b, ...a };
-              /*
-              if (a.adminlock) {
-                merged_ovr[k] = { ...a }; // admin locked: imponi admin settings 
-              } else {
-                const agentCopy = { ...b };
-              if (agentCopy.adminlock) agentCopy.adminlock = false; // agent reset adminlock
-              merged_ovr[k] = { ...a, ...agentCopy }; // agent overrides admin settings
-            }
-            */
-            
+              // Merge preferring agent values but track which props admin defined
+              const merged: Metaex = { ...b, ...a };
+              if (a.visible !== undefined) {
+                merged.visible = b.visible ?? a.visible; // agent can override
+                merged._adminVisible = true;
+              }
+              if (a.disabled !== undefined) {
+                merged.disabled = b.disabled ?? a.disabled;
+                merged._adminDisabled = true;
+              }
+              if (a.order !== undefined) {
+                merged.order = b.order ?? a.order;
+                merged._adminOrder = true;
+              }
+              // retain adminlock but no longer using for disabling
+              if (a.adminlock) merged.adminlock = a.adminlock;
+              merged_ovr[k] = merged;
             } else if (a) {
-              merged_ovr[k] = { ...a };
+              const merged: Metaex = { ...a };
+              if (a.visible !== undefined) merged._adminVisible = true;
+              if (a.disabled !== undefined) merged._adminDisabled = true;
+              if (a.order !== undefined) merged._adminOrder = true;
+              merged_ovr[k] = merged;
             } else if (b) {
-              const agentCopy = { ...b };
-              if (agentCopy.adminlock) agentCopy.adminlock = false;
-              merged_ovr[k] = agentCopy;
+              const copyb: Metaex = { ...b };
+              if (copyb._adminDisabled) copyb.adminlock = false; // keep previous behaviour
+              if (copyb._adminVisible) copyb.adminlock = false; // keep previous behaviour
+              if (copyb._adminOrder) copyb.adminlock = false; // keep previous behaviour
+              merged_ovr[k] = { ...copyb } ; // purely agent values
             }
-
           });
           console.log(
             "[MagicSettingsDialog] merged admin+agent overrides",
@@ -268,7 +277,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
           const cleaned: Record<string, Meta> = {};
           Object.entries(agentOverrides).forEach(([k, v]: [string, Meta]) => {
             cleaned[k] = { ...v };
-            if (cleaned[k].adminlock) cleaned[k].adminlock = false;
+            if (cleaned[k].adminlock) cleaned[k].adminlock = false; // keep previous behaviour
           });
           setOvr(cleaned);
           setSavedSnapshot(JSON.stringify(cleaned));
@@ -442,8 +451,12 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
 
                     <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                       {(() => {
-                        const locked = !!r.meta.adminlock && role !== "admin";
-                        const faded = locked ? { opacity: 0.4, pointerEvents: "none" } : {};
+                        // New locking logic: if agent and property originated from admin, disable that control.
+                        const isAgent = role === "agent";
+                        const lockVisibility = isAgent && r.meta._adminVisible;
+                        const lockDisabled = isAgent && r.meta._adminDisabled;
+                        const fadedVis = lockVisibility ? { opacity: 0.4, pointerEvents: "none" } : {};
+                        const fadedDis = lockDisabled ? { opacity: 0.4, pointerEvents: "none" } : {};
                         return (
                           <>
                             <Tooltip
@@ -452,12 +465,12 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                               <span>
                                 <IconButton
                                   size="small"
-                                  disabled={locked}
+                                  disabled={lockVisibility}
                                   onClick={() =>
-                                    !locked &&
+                                    !lockVisibility &&
                                     update(r.key, { visible: !r.meta.visible })
                                   }
-                                  sx={faded}
+                                  sx={fadedVis}
                                 >
                                   {r.meta.visible ? (
                                     <VisibilityIcon
@@ -476,14 +489,14 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                               <span>
                                 <IconButton
                                   size="small"
-                                  disabled={locked}
+                                  disabled={lockDisabled}
                                   onClick={() =>
-                                    !locked &&
+                                    !lockDisabled &&
                                     update(r.key, {
                                       disabled: !r.meta.disabled,
                                     })
                                   }
-                                  sx={faded}
+                                  sx={fadedDis}
                                 >
                                   {r.meta.disabled ? (
                                     <LockIcon
@@ -500,7 +513,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                         );
                       })()}
 
-                      {role === "admin" && (
+                      {/*role === "admin" && (
                         <Tooltip
                           title={
                             r.meta.adminlock
@@ -524,25 +537,13 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                             )}
                           </IconButton>
                         </Tooltip>
-                      )}
+                      )*/}
 
-                      {role === "agent" && r.meta.adminlock && (
-                        <Tooltip
-                          title={
-                            r.meta.adminlock
-                              ? "Sbloccato (admin)"
-                              : "Bloccato (admin)"
-                          }
-                        >
-                          <AdminPanelSettingsIcon
-                            color="warning"
-                            fontSize="small"
-                          />
-                        </Tooltip>
-                      )}
+                      {/* Removed old adminlock indicator for agents per new requirements */}
   
                       {(() => {
-                        const locked = !!r.meta.adminlock && role !== "admin";
+                        const isAgent = role === "agent";
+                        const lockOrder = isAgent && r.meta._adminOrder;
                         return (
                           <TextField
                             size="small"
@@ -555,8 +556,8 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                                 order: parseInt(e.target.value || "0", 10),
                               })
                             }
-                            sx={{ width: 96, opacity: locked ? 0.4 : 1 }}
-                            disabled={locked}
+                            sx={{ width: 96, opacity: lockOrder ? 0.4 : 1 }}
+                            disabled={lockOrder}
                           />
                         );
                       })()}

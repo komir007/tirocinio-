@@ -10,6 +10,12 @@ export type Meta = {
   adminlock?: boolean;
 };
 
+export type Metaex = Meta & {
+  _adminVisible?: boolean;
+  _adminOrder?: boolean;
+  _adminDisabled?: boolean;
+};
+
 export type TNode = {
   key: string;
   meta: Meta;

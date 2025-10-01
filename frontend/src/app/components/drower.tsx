@@ -2,6 +2,7 @@
 import * as React from "react";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
+import CssBaseline from "@mui/material/CssBaseline";
 import Drawer from "@mui/material/Drawer";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -12,6 +13,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
+import MenuIcon from "@mui/icons-material/Menu";
 import IconButton from "@mui/material/IconButton";
 import LogoutIcon from "@mui/icons-material/Logout";
 import WarningIcon from '@mui/icons-material/Warning';
@@ -20,9 +22,11 @@ import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import { usePathname, useRouter } from "next/navigation";
 import { AuthContext } from "./Authcontext";
 import {
+  Button,
   useTheme,
   useMediaQuery,
   Avatar,
+  Collapse,
 } from "@mui/material";
 
 const drawerWidth = 280;

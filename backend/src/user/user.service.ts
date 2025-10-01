@@ -1,12 +1,14 @@
 
 // src/users/users.service.ts
-import { Injectable, NotFoundException, BadRequestException, Req } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { UserSettings } from '../user-settings/user-settings.entity';
 import { CreateUserDto , UpdateUserDto } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
+import { Meta } from './user.entity';
+
 
 @Injectable()
 export class UsersService {
@@ -22,12 +24,12 @@ export class UsersService {
    * Assunzione: esiste un record in user_settings con settingname='user_form' (o default) che contiene
    * customizationConfig = { fields: { name: { visible: true }, surname: { visible: false }, ... } }
    */
-  private async getFieldVisibilityConfig(userid?: number, nameSettings?: string): Promise<Record<string, any>> {
-    if (!userid) return {};
-    const settings = await this.userSettingsRepository.findOne({ where: { userId: userid, settingname: nameSettings || 'form_Registration' } });
+  private async getFieldVisibilityConfig(userId?: number, nameSettings?: string): Promise<Record<string, any>> {
+    if (!userId) return {};
+    const settings = await this.userSettingsRepository.findOne({ where: { userId: userId, settingname: nameSettings } });
     if (!settings || !settings.customizationConfig) return {};
     // Estrarre struttura attesa
-    const fieldsCfg = settings.customizationConfig.fields || {};
+    const fieldsCfg = settings.customizationConfig || {};
     return fieldsCfg;
   }
 
@@ -36,17 +38,39 @@ export class UsersService {
    * Se un campo è marcato come non visibile (visible === false) e viene passato un valore, lancia eccezione.
    * In alternativa si potrebbe scegliere di rimuovere il campo invece di lanciare errore: qui lanciamo errore per sicurezza.
    */
-  private async enforceHiddenFieldsPolicy(input: Partial<User>, userid?: number, nameSettings?: string): Promise<void> {
-    const visibility = await this.getFieldVisibilityConfig(userid, nameSettings);
-    console.log('Campo visibilità per userId', userid, ':', visibility);
+  private async enforceHiddenFieldsPolicy(input: Partial<User>, userId: number, nameSettings?: string): Promise<void> {
+    const visibility = await this.getFieldVisibilityConfig(userId, nameSettings);
+    console.log('Campo visibilità per userId', userId, ':', visibility);
     if (!visibility || Object.keys(visibility).length === 0) return; // nessuna policy
+    
+    // Normalizza visibility in un oggetto plain (già dovrebbe esserlo, ma per sicurezza)
+    const visibilityObj = { ...visibility };
+    console.log('Oggetto visibilità normalizzato:', visibilityObj);
+    // Usa visibilityObj.ovr se presente, altrimenti l'oggetto stesso
+    const overridesSource = visibilityObj.ovr && typeof visibilityObj.ovr === 'object'
+      ? visibilityObj.ovr
+      : visibilityObj;
+    if (!overridesSource || Object.keys(overridesSource).length === 0) return;
+    for (const [fieldName, metaRaw] of Object.entries(overridesSource)) {
+      // Assicura che meta sia un oggetto
+      const meta = (metaRaw && typeof metaRaw === 'object') ? metaRaw as Meta : { visible: true };
+      console.log(`Verifica campo '${fieldName}' con meta:`, meta);
+      // Campo input atteso con prefisso (solo se è davvero un prefisso)
+      const fieldKey = fieldName.slice(6); // rimuove 'field_' 
+      console.log(`Controllo campo input chiave: '${fieldKey}'`);
 
-    for (const [fieldName, meta] of Object.entries(visibility)) {
-      const visibleFlag = (meta as any)?.visible;
-      const value = input[fieldName as keyof User];
-      const hasValue = Object.prototype.hasOwnProperty.call(input, fieldName) && value !== undefined && value !== null && value !== '';
-      if (visibleFlag === false && hasValue) {
-        throw new BadRequestException(`Il campo '${fieldName}' non è attualmente visibile e non può essere impostato.`);
+      const value = (input)[fieldKey];
+      const hasValue = Object.prototype.hasOwnProperty.call(input, fieldKey)
+        && value !== undefined
+        && value !== null
+        && value !== '';
+
+      // Se il campo è nascosto (visible === false) non deve avere valore
+      if (meta.visible === false && hasValue) {
+        console.log(`Violazione policy: campo nascosto '${fieldName}' con chiave input '${fieldKey}' ha valore:`, value);
+        throw new BadRequestException(
+          `Il campo nascosto '${fieldName}' (chiave input '${fieldKey}') non può essere valorizzato.`
+        );
       }
     }
   }
@@ -65,10 +89,11 @@ export class UsersService {
 
   // Crea un nuovo utente
   // userData ora può includere name, surname, email, password, role
-  async create(@Req() req, userData: Partial<User>): Promise<User> {
+  async create(userId: number, userData: Partial<User>): Promise<User> {
     // Enforce hidden field policy (usa createdBy per recuperare configurazione del creatore)
     const nameSettings = "form_Registration";
-    await this.enforceHiddenFieldsPolicy(userData, req.user.id, nameSettings);
+    console.log('Creazione utente da parte di userId:', userId, 'con dati:', userData);
+    await this.enforceHiddenFieldsPolicy(userData, userId, nameSettings);
     if (userData.password) {
       userData.password = await bcrypt.hash(userData.password, 10);
     }
@@ -78,10 +103,10 @@ export class UsersService {
 
   // Aggiorna un utente
   // userData ora può includere name, surname, email, password, role
-  async update(@Req() req, id: number, updateUserDto: UpdateUserDto, modifierEmail?: string): Promise<User | null> {
+  async update(userId: number, id: number, updateUserDto: UpdateUserDto, modifierEmail?: string): Promise<User | null> {
     // Enforce hidden field policy rispetto alla configurazione del modificatore (chi effettua la richiesta)
     const nameSettings = "form_Edit_User";
-    await this.enforceHiddenFieldsPolicy(updateUserDto, req.user.id, nameSettings);
+    await this.enforceHiddenFieldsPolicy(updateUserDto, userId, nameSettings);
     if (updateUserDto.password) {
         updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
     }

@@ -15,11 +15,11 @@ export class UsersController {
   // Usa il guard JWT per proteggere questa rotta
   @UseGuards(JwtGuard) 
   @Get()
-  async findAll(@NestRequest() req): Promise<User[]> {
+  async findAll(@NestRequest() req: Request): Promise<User[]> {
   // req.user contiene i dati dell'utente autenticato (userId, email, role)
   console.log('Richiesta ricevuta da:', req.user);
-  const userEmail = req.user.email;
-  const userRole = req.user.role;
+  const userEmail = (req.user as any)?.email;
+  const userRole = (req.user as any)?.role;
 
   //console.log('Email utente:', userEmail);
   return this.usersService.findAll(userEmail, userRole);
@@ -36,21 +36,23 @@ export class UsersController {
   // Creare un nuovo utente 
   @UseGuards(JwtGuard) 
   @Post()
-  async create(@NestRequest() req: Request, @Body() createUserDto: CreateUserDto): Promise<User> {
+  async create(@NestRequest() req, @Body() createUserDto: CreateUserDto): Promise<User> {
     const creatorEmail = (req.user as any)?.email;
+    const creatorId = req.user.userId;
     // Impostiamo createdBy se non presente
     if (creatorEmail && !createUserDto.createdBy) {
       (createUserDto as any).createdBy = creatorEmail;
     }
-    return this.usersService.create(req, createUserDto);
+    return this.usersService.create(creatorId, createUserDto);
   }
 
   // Aggiornare un utente 
   @UseGuards(JwtGuard)
   @Put(':id')
-  async update(@NestRequest() req: Request, @Param('id') id: number, @Body() updateUserDto: UpdateUserDto): Promise<User | null> {
+  async update(@NestRequest() req, @Param('id') id: number, @Body() updateUserDto: UpdateUserDto): Promise<User | null> {
     const modifierEmail = (req.user as any)?.email;
-    return this.usersService.update(req,id, updateUserDto, modifierEmail);
+    const modifierId = req.user.userId;
+    return this.usersService.update(modifierId, id, updateUserDto, modifierEmail);
   }
 
   // Eliminare un utente (solo per admin)
@@ -62,10 +64,10 @@ export class UsersController {
 
   // Ottenere il proprio profilo (qualsiasi utente autenticato)
   @Get('me')
-  async getMyProfile(@NestRequest() req): Promise<User | null> {
+  async getMyProfile(@NestRequest() req: Request): Promise<User| null> {
     // req.user contiene i dati dell'utente autenticato (userId, email, role)
     // Recupera l'utente completo dal database se hai bisogno di name/surname
-    return this.usersService.findOne(req.user.userId);
+    return this.usersService.findOne((req.user as any).userId);
   }
   
 
