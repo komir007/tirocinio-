@@ -40,7 +40,7 @@ export class UsersService {
    */
   private async enforceHiddenFieldsPolicy(input: Partial<User>, userId: number, nameSettings?: string): Promise<void> {
     const visibility = await this.getFieldVisibilityConfig(userId, nameSettings);
-    console.log('Campo visibilità per userId', userId, ':', visibility);
+    console.log('Campo visibilità per userId', userId, ':', visibility, typeof visibility);
     if (!visibility || Object.keys(visibility).length === 0) return; // nessuna policy
     
     // Normalizza visibility in un oggetto plain (già dovrebbe esserlo, ma per sicurezza)
@@ -59,17 +59,19 @@ export class UsersService {
       const fieldKey = fieldName.slice(6); // rimuove 'field_' 
       console.log(`Controllo campo input chiave: '${fieldKey}'`);
 
-      const value = (input)[fieldKey];
+      const value = input[fieldKey];
       const hasValue = Object.prototype.hasOwnProperty.call(input, fieldKey)
         && value !== undefined
         && value !== null
         && value !== '';
 
-      // Se il campo è nascosto (visible === false) non deve avere valore
-      if (meta.visible === false && hasValue) {
-        console.log(`Violazione policy: campo nascosto '${fieldName}' con chiave input '${fieldKey}' ha valore:`, value);
+        // Se il campo è nascosto (visible === false) non deve avere valore
+        if (meta.visible === false && hasValue) {
+        //console.log("prima informazione input--------->",input);
+        //input[fieldKey] = undefined; // rimuovi il campo
+        console.log(`Violazione policy: campo nascosto '${fieldName}' nel form: ${nameSettings} con chiave input '${fieldKey}' ha valore:`, value);
         throw new BadRequestException(
-          `Il campo nascosto '${fieldName}' (chiave input '${fieldKey}') non può essere valorizzato.`
+          `Il campo nascosto '${fieldName}' nel form: ${nameSettings} (chiave input '${fieldKey}') non può essere valorizzato.`
         );
       }
     }
@@ -94,6 +96,7 @@ export class UsersService {
     const nameSettings = "form_Registration";
     console.log('Creazione utente da parte di userId:', userId, 'con dati:', userData);
     await this.enforceHiddenFieldsPolicy(userData, userId, nameSettings);
+    console.log('Dati utente dopo applicazione policy:--------->', userData);
     if (userData.password) {
       userData.password = await bcrypt.hash(userData.password, 10);
     }

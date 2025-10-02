@@ -7,13 +7,12 @@ export type Meta = {
   visible: boolean;
   order: number;
   disabled: boolean;
+  sezione?: string; // nome della sezione target (solo per field) oppure undefined
   adminlock?: boolean;
-};
-
-export type Metaex = Meta & {
   _adminVisible?: boolean;
   _adminOrder?: boolean;
   _adminDisabled?: boolean;
+  _adminsezione?: boolean; // flag: il valore sezione è imposto da admin
 };
 
 export type TNode = {
@@ -34,27 +33,70 @@ export default function MagicWrapper({
   const [ovr, setOvr] = useState<Record<string, Meta>>({});
   // call ricorsiva che traversa l'albero dei nodi React;
   const tree = useMemo((): TNode[] => {
+    // Step 1: build initial tree with raw meta (including sezione from overrides)
     const walk = (nodes: ReactNode, parentKey = "root"): TNode[] => {
       const arr = React.Children.toArray(nodes);
       return arr.map<TNode>((node, idx) => {
         const isEl = React.isValidElement(node);
         const el = isEl ? node : null;
         const rawKey = isEl ? el!.key ?? `${parentKey}-${idx}` : `${parentKey}-${idx}`;
-        const key = String(rawKey).replace(/^\.\$?/, "");
+        const key = String(rawKey).replace(/^.\$?/, "");
         const props: any = isEl ? el!.props ?? {} : {};
         const def: Meta = {
           visible: typeof props.visible === "boolean" ? props.visible : true,
           order: typeof props.order === "number" ? props.order : idx,
           disabled: typeof props.disabled === "boolean" ? props.disabled : false,
           adminlock: typeof props.adminlock === "boolean" ? props.adminlock : false,
+          sezione: typeof props.sezione === "string" ? props.sezione : undefined,
         };
         const meta = ovr[key] ? { ...def, ...ovr[key] } : def;
-        const children: TNode[] =
-          isEl && props.children ? walk(props.children, key) : [];
-        return { key, meta, node, isEl, children };
+        const childrenArr: TNode[] = isEl && props.children ? walk(props.children, key) : [];
+        return { key, meta, node, isEl, children: childrenArr };
       });
     };
-    return walk(children);
+    const original = walk(children);
+
+    // Step 2: build lookup of sections (keys starting with sezione*)
+    const sectionMap = new Map<string, TNode>();
+    const collectSections = (nodes: TNode[]) => {
+      nodes.forEach((n) => {
+        if (n.key.toLowerCase().startsWith("sezione")) {
+          sectionMap.set(n.key, n.children[1]);
+        }
+        if (n.children.length) collectSections(n.children);
+      });
+    };
+    collectSections(original);
+
+    // Step 3: gather fields that declare a sezione override
+    const fieldsToMove: Array<{ node: TNode; fromParent: TNode | null }> = [];
+    const gather = (nodes: TNode[], parent: TNode | null) => {
+      nodes.forEach((n) => {
+        if (n.key.toLowerCase().startsWith("field") && n.meta.sezione) {
+          fieldsToMove.push({ node: n, fromParent: parent });
+        }
+        if (n.children.length) gather(n.children, n);
+      });
+    };
+    gather(original, null);
+
+    // Step 4: actually move the field nodes to target sections (if section exists)
+    fieldsToMove.forEach(({ node, fromParent }) => {
+      const targetSection = node.meta.sezione && sectionMap.get(node.meta.sezione);
+      if (!targetSection || targetSection === fromParent) return; // nothing to do
+      // Remove from old parent
+      if (fromParent) {
+        fromParent.children = fromParent.children.filter((c) => c !== node);
+      } else {
+        // root level removal
+        const rootIdx = original.indexOf(node);
+        if (rootIdx >= 0) original.splice(rootIdx, 1);
+      }
+      // Append to new section
+      targetSection.children.push(node);
+    });
+
+    return original;
   }, [children, ovr]);
 
   const render = (nodes: TNode[]): ReactNode => {

@@ -129,7 +129,7 @@ export default function Registration() {
                 Informazioni anagrafiche
               </Typography>
               <Box
-                key="1"
+                key="box_anagrafica"
                 gap={2}
                 sx={{
                   display: "flex",
@@ -201,7 +201,7 @@ export default function Registration() {
             >
               <Typography variant="subtitle1">Accesso</Typography>
               <Box
-                key="2"
+                key="box_accesso"
                 display="flex"
                 gap={2}
                 sx={{
@@ -260,6 +260,7 @@ export default function Registration() {
             >
               <Typography variant="subtitle1">Ruolo</Typography>
               <Box
+                key="box_ruolo"
                 display="flex"
                 flexDirection={{ xs: "column", sm: "row" }}
                 width={{ xs: "100%", sm: "50%" }}

@@ -16,6 +16,10 @@ import {
   Divider,
   Tooltip,
   Snackbar,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
@@ -26,10 +30,9 @@ import EditIcon from "@mui/icons-material/Edit";
 import SettingsIcon from "@mui/icons-material/Settings";
 
 import { AuthContext } from "../../components/Authcontext";
-import { TNode, Meta, Metaex } from "./MagicWrapper";
+import { TNode, Meta } from "./MagicWrapper";
 
 export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
-  
   const authContext = useContext(AuthContext);
   const fetchWithAuth = authContext?.fetchWithAuth;
   const userId = authContext?.user?.id;
@@ -43,7 +46,6 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
 
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState<boolean>(false);
-
   /*const storageKey = (uid?: string, formKey?: string) =>
     `magic_ovr:${uid || "anon"}:${formKey || "global"}`;*/
   // form-specific setting name: use parentId and formKey as requested
@@ -74,7 +76,30 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
     const cur = JSON.stringify(ovr);
     setIsSaved(savedSnapshot === cur && savedSnapshot !== null);
   }, [ovr, savedSnapshot]);
-  
+
+  // Rimuove flag interni e (se admin) anche i campi che sono default per ridurre rumore lato server
+  const sanitizeOverrides = (
+    raw: Record<string, Meta>,
+    isAdmin: boolean
+  ): Record<string, any> => {
+    const out: Record<string, any> = {};
+    Object.entries(raw).forEach(([k, v]) => {
+      const clone: any = { ...v };
+      delete clone._adminVisible;
+      delete clone._adminDisabled;
+      delete clone._adminOrder;
+      delete clone._adminsezione;
+      if (isAdmin) {
+        if (clone.visible === true) delete clone.visible;
+        if (clone.disabled === false) delete clone.disabled;
+        if (clone.adminlock === false) delete clone.adminlock;
+        if (clone.sezione === undefined) delete clone.sezione;
+      }
+      if (Object.keys(clone).length > 0) out[k] = clone;
+    });
+    return out;
+  };
+
   const saveToServer = async () => {
     try {
       if (!fetchWithAuth) {
@@ -90,8 +115,11 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
       const url = `${API_BASE_URL}/user-settings/my-settings`;
+      // Sempre ripulisci i flag interni; per admin anche campi default
+      const toSend = sanitizeOverrides(ovr, true);
+
       const body: any = {
-        customizationConfig: { ovr },
+        customizationConfig: { ovr: toSend },
         settingname: settingName,
       };
       console.log("Saving to server URL:", ovr, url, body);
@@ -149,8 +177,10 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
         const cfg = data?.customizationConfig;
         if (cfg && cfg.ovr) {
           console.log("url server admin", url);
-          setOvr(cfg.ovr);
-          setSavedSnapshot(JSON.stringify(cfg.ovr));
+          // Admin: i dati dal server non dovrebbero contenere flag, ma sanitizziamo comunque
+          const clean = sanitizeOverrides(cfg.ovr, false);
+          setOvr(clean);
+          setSavedSnapshot(JSON.stringify(clean));
           setIsSaved(true);
           setSnackbarMessage("Impostazioni caricate dall'admin");
           setOpenSnackbar(true);
@@ -216,42 +246,43 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
             ...Object.keys(adminO),
             ...Object.keys(agentO),
           ]);
-
-          console.log("allKeys:", allKeys);
-
           allKeys.forEach((k) => {
             const a = adminO[k];
             const b = agentO[k];
             if (a && b) {
-              // Merge preferring agent values but track which props admin defined
-              const merged: Metaex = { ...b, ...a };
-              if (a.visible !== undefined) {
-                merged.visible = b.visible ?? a.visible; // agent can override
+              const merged: Meta = { ...b } as Meta;
+              // Solo proprietà realmente presenti nell'override admin (dopo pulizia) generano blocco
+              if (Object.prototype.hasOwnProperty.call(a, "visible")) {
+                merged.visible = b.visible ?? a.visible;
                 merged._adminVisible = true;
               }
-              if (a.disabled !== undefined) {
+              if (Object.prototype.hasOwnProperty.call(a, "disabled")) {
                 merged.disabled = b.disabled ?? a.disabled;
                 merged._adminDisabled = true;
               }
-              if (a.order !== undefined) {
+              if (Object.prototype.hasOwnProperty.call(a, "order")) {
                 merged.order = b.order ?? a.order;
                 merged._adminOrder = true;
               }
-              // retain adminlock but no longer using for disabling
-              if (a.adminlock) merged.adminlock = a.adminlock;
+              if (Object.prototype.hasOwnProperty.call(a, "sezione")) {
+                merged.sezione = b.sezione ?? a.sezione;
+                merged._adminsezione = true;
+              }
+              if (a.adminlock) merged.adminlock = a.adminlock; // legacy
               merged_ovr[k] = merged;
             } else if (a) {
-              const merged: Metaex = { ...a };
-              if (a.visible !== undefined) merged._adminVisible = true;
-              if (a.disabled !== undefined) merged._adminDisabled = true;
-              if (a.order !== undefined) merged._adminOrder = true;
+              const merged: Meta = { ...a } as Meta;
+              if (Object.prototype.hasOwnProperty.call(a, "visible"))
+                merged._adminVisible = true;
+              if (Object.prototype.hasOwnProperty.call(a, "disabled"))
+                merged._adminDisabled = true;
+              if (Object.prototype.hasOwnProperty.call(a, "order"))
+                merged._adminOrder = true;
+              if (Object.prototype.hasOwnProperty.call(a, "sezione"))
+                merged._adminsezione = true;
               merged_ovr[k] = merged;
             } else if (b) {
-              const copyb: Metaex = { ...b };
-              if (copyb._adminDisabled) copyb.adminlock = false; // keep previous behaviour
-              if (copyb._adminVisible) copyb.adminlock = false; // keep previous behaviour
-              if (copyb._adminOrder) copyb.adminlock = false; // keep previous behaviour
-              merged_ovr[k] = { ...copyb } ; // purely agent values
+              merged_ovr[k] = { ...b } as Meta; // solo agent
             }
           });
           console.log(
@@ -266,8 +297,22 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
           return;
         } else if (adminOverrides && !agentOverrides) {
           console.log("[MagicSettingsDialog] only admin overrides present");
-          setOvr(adminOverrides);
-          setSavedSnapshot(JSON.stringify(adminOverrides));
+          const withFlags: Record<string, Meta> = {};
+          Object.entries(adminOverrides).forEach(([k, v]) => {
+            const clone: Meta = { ...v } as Meta;
+            if (Object.prototype.hasOwnProperty.call(v, "visible"))
+              clone._adminVisible = true;
+            if (Object.prototype.hasOwnProperty.call(v, "disabled"))
+              clone._adminDisabled = true;
+            if (Object.prototype.hasOwnProperty.call(v, "order"))
+              clone._adminOrder = true;
+            if (Object.prototype.hasOwnProperty.call(v, "sezione"))
+              clone._adminsezione = true;
+            withFlags[k] = clone;
+          });
+          // Flags aggiunti solo runtime, ma memorizziamo snapshot senza alterare i dati originali
+          setOvr(withFlags);
+          setSavedSnapshot(JSON.stringify(withFlags));
           setIsSaved(true);
           setSnackbarMessage("Impostazioni caricate dal admin nel merge");
           setOpenSnackbar(true);
@@ -342,11 +387,11 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
         console.error("No fetchWithAuth available");
         return;
       }
+      const newOvr: Record<string, Meta> = {};
 
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
       const url = `${API_BASE_URL}/user-settings/my-settings`;
-      const newOvr: Record<string, Meta> = {};
       const body: any = {
         customizationConfig: { ovr: newOvr },
         settingname: settingName,
@@ -395,8 +440,65 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
     return out;
   }, [tree]);
 
+  // collect available section keys for sezione assignment
+  const sectionKeys = useMemo(
+    () =>
+      list
+        .filter((i) => i.key.toLowerCase().startsWith("sezione"))
+        .map((i) => i.key),
+    [list]
+  );
+
   const update = (key: string, patch: Partial<Meta>) => {
-    setOvr((prevOvr: Record<string, Meta>) => ({ ...prevOvr, [key]: { ...(prevOvr[key] ?? {}), ...patch } }));
+    if (
+      typeof patch.visible !== "undefined" &&
+      patch.visible === false &&
+      key.toLowerCase().startsWith("sezione")
+    ) {
+      // Trova il nodo sezione nel tree
+      const findNode = (nodes: TNode[]): TNode | null => {
+      for (const n of nodes) {
+        if (n.key === key) return n;
+        if (n.children) {
+        const f = findNode(n.children);
+        if (f) return f;
+        }
+      }
+      return null;
+      };
+
+      const sectionNode = findNode(tree);
+
+      if (sectionNode) {
+      // Raccoglie tutti i discendenti con key che inizia per "field"
+      const fieldKeys: string[] = [];
+      const collect = (n: TNode) => {
+        n.children?.forEach((c) => {
+        if ((c.key || "").toLowerCase().startsWith("field")) {
+          fieldKeys.push(c.key);
+        }
+        collect(c);
+        });
+      };
+      collect(sectionNode);
+
+      setOvr((prev: Record<string, Meta>) => {
+        const next = { ...prev };
+        // Set sezione stessa
+        next[key] = { ...(next[key] ?? {}), ...patch };
+        // Set visibile false a tutti i field discendenti
+        fieldKeys.forEach((fk) => {
+        next[fk] = { ...(next[fk] ?? {}), visible: false };
+        });
+        return next;
+      });
+      return; // Evita la setOvr standard sotto
+      }
+    }
+    setOvr((prevOvr: Record<string, Meta>) => ({
+      ...prevOvr,
+      [key]: { ...(prevOvr[key] ?? {}), ...patch },
+    }));
   };
 
   return (
@@ -412,7 +514,9 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
         open={open}
         onClose={() => setOpen(false)}
         fullWidth
-        slotProps={{ paper: { sx: { width: "min(640px, 92vw)", maxHeight: "90vh" } } }}
+        slotProps={{
+          paper: { sx: { width: "min(640px, 92vw)", maxHeight: "90vh" } },
+        }}
         sx={{
           "& .MuiDialog-container": {
             alignItems: "center",
@@ -431,7 +535,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
         </DialogTitle>
         <Divider />
         <DialogContent>
-          <Box sx={{ maxHeight: "50vh", overflow: "auto", mt: 1 }}>
+          <Box sx={{ maxHeight: "80vh", overflow: "auto", mt: 1 }}>
             <List dense>
               {Array.isArray(list) &&
                 list.map((r: any) => (
@@ -451,14 +555,58 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
 
                     <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                       {(() => {
-                        // New locking logic: if agent and property originated from admin, disable that control.
                         const isAgent = role === "agent";
                         const lockVisibility = isAgent && r.meta._adminVisible;
                         const lockDisabled = isAgent && r.meta._adminDisabled;
-                        const fadedVis = lockVisibility ? { opacity: 0.4, pointerEvents: "none" } : {};
-                        const fadedDis = lockDisabled ? { opacity: 0.4, pointerEvents: "none" } : {};
+                        const faded = (cond: boolean) =>
+                          cond ? { opacity: 0.4 } : {};
                         return (
                           <>
+                            {(() => {
+                              // UI controllo sezione solo per field*
+                              const isField = r.key
+                                .toLowerCase()
+                                .startsWith("field");
+                              if (!isField) return null;
+                              const isAgent = role === "agent";
+                              const lockSezione =
+                                isAgent && r.meta._adminsezione;
+                              return (
+                                <FormControl
+                                  size="small"
+                                  sx={{
+                                    minWidth: 120,
+                                    opacity: lockSezione ? 0.4 : 1,
+                                  }}
+                                >
+                                  <InputLabel id={`sezione-label-${r.key}`}>
+                                    Sezione
+                                  </InputLabel>
+                                  <Select
+                                    labelId={`sezione-label-${r.key}`}
+                                    label="Sezione"
+                                    value={r.meta.sezione || ""}
+                                    disabled={lockSezione}
+                                    onChange={(e) =>
+                                      !lockSezione &&
+                                      update(r.key, {
+                                        sezione: e.target.value || undefined,
+                                      })
+                                    }
+                                  >
+                                    <MenuItem value="">
+                                      <em>(Default)</em>
+                                    </MenuItem>
+                                    {sectionKeys.map((sk) => (
+                                      <MenuItem key={sk} value={sk}>
+                                        {sk.replace(/[-_]/g, " ")}
+                                      </MenuItem>
+                                    ))}
+                                  </Select>
+                                </FormControl>
+                              );
+                            })()}
+
                             <Tooltip
                               title={r.meta.visible ? "Nascondi" : "Mostra"}
                             >
@@ -470,12 +618,14 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                                     !lockVisibility &&
                                     update(r.key, { visible: !r.meta.visible })
                                   }
-                                  sx={fadedVis}
+                                  sx={faded(lockVisibility)}
                                 >
                                   {r.meta.visible ? (
                                     <VisibilityIcon
                                       fontSize="small"
-                                      color="primary"
+                                      color={
+                                        lockVisibility ? undefined : "primary"
+                                      }
                                     />
                                   ) : (
                                     <VisibilityOffIcon fontSize="small" />
@@ -496,12 +646,14 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                                       disabled: !r.meta.disabled,
                                     })
                                   }
-                                  sx={fadedDis}
+                                  sx={faded(lockDisabled)}
                                 >
                                   {r.meta.disabled ? (
                                     <LockIcon
                                       fontSize="small"
-                                      color="primary"
+                                      color={
+                                        lockDisabled ? undefined : "primary"
+                                      }
                                     />
                                   ) : (
                                     <EditIcon fontSize="small" />
@@ -540,7 +692,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                       )*/}
 
                       {/* Removed old adminlock indicator for agents per new requirements */}
-  
+
                       {(() => {
                         const isAgent = role === "agent";
                         const lockOrder = isAgent && r.meta._adminOrder;
@@ -552,6 +704,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                               Number.isFinite(r.meta.order) ? r.meta.order : 0
                             }
                             onChange={(e) =>
+                              !lockOrder &&
                               update(r.key, {
                                 order: parseInt(e.target.value || "0", 10),
                               })
@@ -561,7 +714,6 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                           />
                         );
                       })()}
-
                     </Box>
                   </ListItem>
                 ))}
