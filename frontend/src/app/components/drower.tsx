@@ -99,12 +99,6 @@ export default function ResponsiveDrawer(props: Props) {
       path: "",
       paths: [""],
     },
-    {
-      label: "FISHANDCHIPS",
-      icon: <WarningIcon />,
-      path: "",
-      paths: [""],
-    },
   ];
 
   const isClient = String(user?.role ?? "").toLowerCase() === "client";

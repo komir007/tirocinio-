@@ -14,7 +14,6 @@ import Alert from "@mui/material/Alert";
 import { Divider, IconButton } from "@mui/material";
 import { Settings as SettingsIcon } from "@mui/icons-material";
 import MagicWrapper from "../test_secon/comp/MagicWrapper";
-import { grey } from "@mui/material/colors";
 
 export default function Registration() {
   const authContext = useContext(AuthContext);
@@ -23,7 +22,7 @@ export default function Registration() {
   const isAgent = authContext?.user?.role?.toLowerCase() === "agent";
 
   const [form, setForm] = React.useState({
-    name: "esxample",
+    name: "",
     email: "",
     password: "",
     role: isAgent ? "client" : "",
@@ -58,7 +57,7 @@ export default function Registration() {
             name: form.name,
             email: form.email,
             password: form.password,
-            role: isAgent ? "client" : form.role, // forza client se agent
+            role: isAgent ? "client" : form.role ?? "client", // forza client se agent
             createdBy: form.createdBy,
           }),
         }

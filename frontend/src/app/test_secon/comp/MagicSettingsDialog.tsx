@@ -250,22 +250,22 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
             const a = adminO[k];
             const b = agentO[k];
             if (a && b) {
-              const merged: Meta = { ...b } as Meta;
+              const merged: Meta = { ...a };
               // Solo proprietà realmente presenti nell'override admin (dopo pulizia) generano blocco
               if (Object.prototype.hasOwnProperty.call(a, "visible")) {
-                merged.visible = b.visible ?? a.visible;
+                merged.visible = a.visible ?? b.visible;
                 merged._adminVisible = true;
               }
               if (Object.prototype.hasOwnProperty.call(a, "disabled")) {
-                merged.disabled = b.disabled ?? a.disabled;
+                merged.disabled = a.disabled ?? b.disabled;
                 merged._adminDisabled = true;
               }
               if (Object.prototype.hasOwnProperty.call(a, "order")) {
-                merged.order = b.order ?? a.order;
+                merged.order = a.order ?? b.order;
                 merged._adminOrder = true;
               }
               if (Object.prototype.hasOwnProperty.call(a, "sezione")) {
-                merged.sezione = b.sezione ?? a.sezione;
+                merged.sezione = a.sezione ?? b.sezione;
                 merged._adminsezione = true;
               }
               if (a.adminlock) merged.adminlock = a.adminlock; // legacy
@@ -282,7 +282,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
                 merged._adminsezione = true;
               merged_ovr[k] = merged;
             } else if (b) {
-              merged_ovr[k] = { ...b } as Meta; // solo agent
+              merged_ovr[k] = { ...b }; // solo agent
             }
           });
           console.log(
@@ -407,9 +407,7 @@ export default function MagicSettingsDialog({ tree, ovr, setOvr }: any) {
         setOpenSnackbar(true);
         throw new Error("Save failed");
       }
-      setOvr({});
-      setSavedSnapshot(JSON.stringify(newOvr));
-      setIsSaved(true);
+      loadFromServer(); // ricarica da server per evitare problemi di sincronizzazione
       setSnackbarMessage("Impostazioni ressettate");
       setOpenSnackbar(true);
     } catch (e) {

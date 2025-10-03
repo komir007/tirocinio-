@@ -37,6 +37,7 @@ export class UsersController {
   @UseGuards(JwtGuard) 
   @Post()
   async create(@NestRequest() req, @Body() createUserDto: CreateUserDto): Promise<User> {
+    console.log('Dati ricevuti per la creazione utente:----------->', createUserDto);
     const creatorEmail = (req.user as any)?.email;
     const creatorId = req.user.userId;
     // Impostiamo createdBy se non presente

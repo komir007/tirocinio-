@@ -67,6 +67,7 @@ export default function MagicWrapper({
       });
     };
     collectSections(original);
+    // console.log("Sezione map:", sectionMap);
 
     // Step 3: gather fields that declare a sezione override
     const fieldsToMove: Array<{ node: TNode; fromParent: TNode | null }> = [];
@@ -79,6 +80,7 @@ export default function MagicWrapper({
       });
     };
     gather(original, null);
+     console.log("Fields to move:", fieldsToMove);
 
     // Step 4: actually move the field nodes to target sections (if section exists)
     fieldsToMove.forEach(({ node, fromParent }) => {

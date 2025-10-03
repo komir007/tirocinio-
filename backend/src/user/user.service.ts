@@ -68,7 +68,7 @@ export class UsersService {
         // Se il campo è nascosto (visible === false) non deve avere valore
         if (meta.visible === false && hasValue) {
         //console.log("prima informazione input--------->",input);
-        //input[fieldKey] = undefined; // rimuovi il campo
+        input[fieldKey] = undefined; // rimuovi il campo
         console.log(`Violazione policy: campo nascosto '${fieldName}' nel form: ${nameSettings} con chiave input '${fieldKey}' ha valore:`, value);
         throw new BadRequestException(
           `Il campo nascosto '${fieldName}' nel form: ${nameSettings} (chiave input '${fieldKey}') non può essere valorizzato.`
